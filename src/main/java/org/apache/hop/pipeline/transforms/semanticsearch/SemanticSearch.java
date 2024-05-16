@@ -40,6 +40,7 @@ import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransform;
 import org.apache.hop.pipeline.transform.TransformMeta;
 import org.apache.hop.pipeline.transforms.semanticsearch.SemanticSearchMeta.SLookupValue;
+import ai.djl.util.ClassLoaderUtils;
 
 /**
  * Performs a fuzzy match for each main stream field row An approximative match is done in a lookup
@@ -336,6 +337,18 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       return false;
     }
 
+    // Set the number of fields to cache
+    // default value is one
+    //
+    int nrFields = 1;
+
+    if (!meta.getLookupValues().isEmpty()) {
+      // cache also additional fields
+      data.addAdditionalFields = true;
+      nrFields += meta.getLookupValues().size();
+    }
+    data.indexOfCachedFields = new int[nrFields];
+
     data.readLookupValues = true;
 
     switch (meta.getEmbeddingModel()) {
@@ -352,8 +365,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
         String onnxFile = resolve(meta.getOnnxFilename());
         String tokenizerFile = resolve(meta.getTokenizerFilename());
 
-        // data.embeddingModel = new OnnxEmbeddingModel(onnxFile, tokenizerFile, PoolingMode.MEAN);
-        data.embeddingModel = new AllMiniLmL6V2EmbeddingModel();
+        setEmbeddingModel(onnxFile, tokenizerFile);
         break;
 
       default:
@@ -372,6 +384,21 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     }
 
     return true;
+  }
+
+  private void setEmbeddingModel(String onnxFile, String tokenizerFile) {
+    /*
+     * The current Threads classloader from hop execution thread is not aware of dependencies from
+     * the plugin, the the classloader needs to be adjusted to dynamically load the models
+     * dependencies.
+     */
+    ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+
+    Thread.currentThread().setContextClassLoader(ClassLoaderUtils.class.getClassLoader());
+    data.embeddingModel = new OnnxEmbeddingModel(onnxFile, tokenizerFile, PoolingMode.MEAN);
+    // data.embeddingModel = new AllMiniLmL6V2EmbeddingModel();
+
+    Thread.currentThread().setContextClassLoader(contextClassLoader);
   }
 
   @Override
