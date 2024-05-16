@@ -32,6 +32,7 @@ import org.apache.hop.pipeline.transform.ITransformDialog;
 import org.apache.hop.pipeline.transform.TransformMeta;
 import org.apache.hop.pipeline.transform.stream.IStream;
 import org.apache.hop.pipeline.transforms.semanticsearch.SemanticSearchMeta.SEmbeddingModel;
+import org.apache.hop.pipeline.transforms.semanticsearch.SemanticSearchMeta.SEmbeddingStore;
 import org.apache.hop.ui.core.ConstUi;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.dialog.BaseDialog;
@@ -66,6 +67,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
   private CCombo wTransform;
 
   private CCombo wModel;
+  
+  private CCombo wStore;
 
   private ComboVar wMainStreamField;
 
@@ -141,17 +144,10 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     // ////////////////////////
     // START OF General TAB ///
     // ////////////////////////
-    CTabItem wGeneralTab = new CTabItem(wTabFolder, SWT.NONE);
-    wGeneralTab.setFont(GuiResource.getInstance().getFontDefault());
-    wGeneralTab.setText(BaseMessages.getString(PKG, "SemanticSearchDialog.General.Tab"));
-
-    Composite wGeneralComp = new Composite(wTabFolder, SWT.NONE);
-    PropsUi.setLook(wGeneralComp);
-
-    FormLayout generalLayout = new FormLayout();
-    generalLayout.marginWidth = 3;
-    generalLayout.marginHeight = 3;
-    wGeneralComp.setLayout(generalLayout);
+    Pair<Composite, CTabItem> tabItems =
+        generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.General.Tab"));
+    Composite wGeneralComp = tabItems.getLeft();
+    CTabItem wGeneralTab = tabItems.getRight();
 
     // /////////////////////////////////
     // START OF Lookup Fields GROUP
@@ -267,77 +263,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     // / END OF MainStream GROUP
     // ///////////////////////////////////////////////////////////
 
-    // /////////////////////////////////
-    // START OF Settings Fields GROUP
-    // /////////////////////////////////
-
-    Group wSettingsGroup = new Group(wGeneralComp, SWT.SHADOW_NONE);
-    PropsUi.setLook(wSettingsGroup);
-    wSettingsGroup
-        .setText(BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
-
-    FormLayout settingsGroupLayout = new FormLayout();
-    settingsGroupLayout.marginWidth = 10;
-    settingsGroupLayout.marginHeight = 10;
-    wSettingsGroup.setLayout(settingsGroupLayout);
-
-    // Model
-    Label wlModel = new Label(wSettingsGroup, SWT.RIGHT);
-    wlModel.setText(BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Label"));
-    PropsUi.setLook(wlModel);
-    FormData fdlModel = new FormData();
-    fdlModel.left = new FormAttachment(0, 0);
-    fdlModel.right = new FormAttachment(middle, -margin);
-    fdlModel.top = new FormAttachment(wMainStreamGroup, margin);
-    wlModel.setLayoutData(fdlModel);
-
-    wModel = new CCombo(wSettingsGroup, SWT.BORDER | SWT.READ_ONLY);
-    PropsUi.setLook(wModel);
-    FormData fdModel = new FormData();
-    fdModel.left = new FormAttachment(middle, 0);
-    fdModel.top = new FormAttachment(wMainStreamGroup, margin);
-    fdModel.right = new FormAttachment(100, -margin);
-    wModel.setLayoutData(fdModel);
-    wModel.setItems(SemanticSearchMeta.SEmbeddingModel.getDescriptions());
-    wModel.addListener(SWT.Selection, e -> activeAlgorithm());
-
-    // Onnx-File
-    Pair<TextVar, Button> inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup, wModel,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.OnnxFilename.Label"),
-        new String[] {"*.onnx", "*"},
-        new String[] {
-            BaseMessages.getString(PKG, "SemanticSearchDialog.FileType.Onnx"),
-            BaseMessages.getString(PKG, "System.FileType.AllFiles")});
-    wOnnxFilename = inputs.getLeft();
-    wbbOnnxFilename = inputs.getRight();
-
-    // Tokenizer-File
-    inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup, wOnnxFilename,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.TokenizerFilename.Label"),
-        new String[] {"*.json", "*"},
-        new String[] {
-            BaseMessages.getString(PKG, "System.FileType.JsonFiles"),
-            BaseMessages.getString(PKG, "System.FileType.AllFiles")});
-    wbbTokenizerFilename = inputs.getRight();
-    wTokenizerFilename = inputs.getLeft();
-
-    FormData fdSettingsGroup = new FormData();
-    fdSettingsGroup.left = new FormAttachment(0, margin);
-    fdSettingsGroup.top = new FormAttachment(wMainStreamGroup, margin);
-    fdSettingsGroup.right = new FormAttachment(100, -margin);
-    wSettingsGroup.setLayoutData(fdSettingsGroup);
-
-    // ///////////////////////////////////////////////////////////
-    // / END OF Settings GROUP
-    // ///////////////////////////////////////////////////////////
-
-    FormData fdGeneralComp = new FormData();
-    fdGeneralComp.left = new FormAttachment(0, 0);
-    fdGeneralComp.top = new FormAttachment(0, 0);
-    fdGeneralComp.right = new FormAttachment(100, 0);
-    fdGeneralComp.bottom = new FormAttachment(100, 0);
-    wGeneralComp.setLayoutData(fdGeneralComp);
-
     wGeneralComp.layout();
     wGeneralTab.setControl(wGeneralComp);
 
@@ -356,19 +281,131 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     setButtonPositions(new Button[] {wOk, wCancel}, margin, null);
 
     // ////////////////////////
+    // START OF Model TAB ///
+    // ////////////////////////
+    tabItems =
+        generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Tab"));
+    Composite wModelComp = tabItems.getLeft();
+    CTabItem wModelTab = tabItems.getRight();
+
+    // /////////////////////////////////
+    // START OF Settings Fields GROUP
+    // /////////////////////////////////
+
+    Group wSettingsGroup = generateGroup(wModelComp,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
+
+    // Model
+    generateLabel(middle, margin, wMainStreamGroup, wSettingsGroup,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Label"));
+
+    wModel = new CCombo(wSettingsGroup, SWT.BORDER | SWT.READ_ONLY);
+    PropsUi.setLook(wModel);
+    FormData fdModel = new FormData();
+    fdModel.left = new FormAttachment(middle, 0);
+    fdModel.top = new FormAttachment(wMainStreamGroup, margin);
+    fdModel.right = new FormAttachment(100, -margin);
+    wModel.setLayoutData(fdModel);
+    wModel.setItems(SemanticSearchMeta.SEmbeddingModel.getDescriptions());
+    wModel.addListener(SWT.Selection, e -> activeModel());
+
+    // Onnx-File
+    Pair<TextVar, Button> inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup, wModel,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.OnnxFilename.Label"),
+        new String[] {"*.onnx", "*"},
+        new String[] {BaseMessages.getString(PKG, "SemanticSearchDialog.FileType.Onnx"),
+            BaseMessages.getString(PKG, "System.FileType.AllFiles")});
+    wOnnxFilename = inputs.getLeft();
+    wbbOnnxFilename = inputs.getRight();
+
+    // Tokenizer-File
+    inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup, wOnnxFilename,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.TokenizerFilename.Label"),
+        new String[] {"*.json", "*"},
+        new String[] {BaseMessages.getString(PKG, "System.FileType.JsonFiles"),
+            BaseMessages.getString(PKG, "System.FileType.AllFiles")});
+    wbbTokenizerFilename = inputs.getRight();
+    wTokenizerFilename = inputs.getLeft();
+
+    FormData fdSettingsGroup = new FormData();
+    fdSettingsGroup.left = new FormAttachment(0, margin);
+    fdSettingsGroup.top = new FormAttachment(wMainStreamGroup, margin);
+    fdSettingsGroup.right = new FormAttachment(100, -margin);
+    wSettingsGroup.setLayoutData(fdSettingsGroup);
+
+    // ///////////////////////////////////////////////////////////
+    // / END OF Settings GROUP
+    // ///////////////////////////////////////////////////////////
+
+    wModelComp.layout();
+    wModelTab.setControl(wModelComp);
+
+    // ///////////////////////////////////////////////////////////
+    // / END OF Model TAB
+    // //////////////////////////////////////////////////////////
+
+    // ////////////////////////
+    // START OF Storage TAB ///
+    // ////////////////////////
+    tabItems =
+        generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Store.Tab"));
+    Composite wStoreComp = tabItems.getLeft();
+    CTabItem wStoreTab = tabItems.getRight();
+
+    // /////////////////////////////////
+    // START OF Settings Fields GROUP
+    // /////////////////////////////////
+
+    Group wStoreGroup = generateGroup(wStoreComp,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
+
+    // Model
+    generateLabel(middle, margin, wSettingsGroup, wStoreGroup,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Label"));
+
+    wStore = new CCombo(wStoreGroup, SWT.BORDER | SWT.READ_ONLY);
+    PropsUi.setLook(wStore);
+    FormData fdStore = new FormData();
+    fdStore.left = new FormAttachment(middle, 0);
+    fdStore.top = new FormAttachment(wSettingsGroup, margin);
+    fdStore.right = new FormAttachment(100, -margin);
+    wStore.setLayoutData(fdStore);
+    wStore.setItems(SemanticSearchMeta.SEmbeddingStore.getDescriptions());
+    wStore.addListener(SWT.Selection, e -> activeModel());
+
+    // Onnx-File
+    inputs = generateFileInput(lsMod, middle, margin, wStoreGroup, wStore,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.OnnxFilename.Label"),
+        new String[] {"*.onnx", "*"},
+        new String[] {BaseMessages.getString(PKG, "SemanticSearchDialog.FileType.Onnx"),
+            BaseMessages.getString(PKG, "System.FileType.AllFiles")});
+    wOnnxFilename = inputs.getLeft();
+    wbbOnnxFilename = inputs.getRight();
+
+    FormData fdStoreGroup = new FormData();
+    fdStoreGroup.left = new FormAttachment(0, margin);
+    fdStoreGroup.top = new FormAttachment(wSettingsGroup, margin);
+    fdStoreGroup.right = new FormAttachment(100, -margin);
+    wStoreGroup.setLayoutData(fdStoreGroup);
+
+    // ///////////////////////////////////////////////////////////
+    // / END OF Settings GROUP
+    // ///////////////////////////////////////////////////////////
+
+    wStoreComp.layout();
+    wStoreTab.setControl(wStoreComp);
+
+    // ///////////////////////////////////////////////////////////
+    // / END OF Storage TAB
+    // ///////////////////////////////////////////////////////////
+
+    // ////////////////////////
     // START OF Fields TAB ///
     // ////////////////////////
-    CTabItem wFieldsTab = new CTabItem(wTabFolder, SWT.NONE);
-    wFieldsTab.setFont(GuiResource.getInstance().getFontDefault());
-    wFieldsTab.setText(BaseMessages.getString(PKG, "SemanticSearchDialog.Fields.Tab"));
-
-    Composite wFieldsComp = new Composite(wTabFolder, SWT.NONE);
-    PropsUi.setLook(wFieldsComp);
-
-    FormLayout fieldsLayout = new FormLayout();
-    fieldsLayout.marginWidth = 3;
-    fieldsLayout.marginHeight = 3;
-    wFieldsComp.setLayout(fieldsLayout);
+    tabItems =
+        generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Fields.Tab"));
+    Composite wFieldsComp = tabItems.getLeft();
+    CTabItem wFieldsTab = tabItems.getRight();
 
     // /////////////////////////////////
     // START OF OutputFields Fields GROUP
@@ -449,13 +486,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     fdReturn.bottom = new FormAttachment(100, -3 * margin);
     wReturn.setLayoutData(fdReturn);
 
-    FormData fdFieldsComp = new FormData();
-    fdFieldsComp.left = new FormAttachment(0, 0);
-    fdFieldsComp.top = new FormAttachment(0, 0);
-    fdFieldsComp.right = new FormAttachment(100, 0);
-    fdFieldsComp.bottom = new FormAttachment(100, 0);
-    wFieldsComp.setLayoutData(fdFieldsComp);
-
     wFieldsComp.layout();
     wFieldsTab.setControl(wFieldsComp);
 
@@ -478,6 +508,53 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     BaseDialog.defaultShellHandling(shell, c -> ok(), c -> cancel());
 
     return transformName;
+  }
+
+  private void generateLabel(int middle, int margin, Group wPreviousGroup, Group wCurrentGroup,
+      String label) {
+    Label wlModel = new Label(wCurrentGroup, SWT.RIGHT);
+    wlModel.setText(label);
+    PropsUi.setLook(wlModel);
+    FormData fdlModel = new FormData();
+    fdlModel.left = new FormAttachment(0, 0);
+    fdlModel.right = new FormAttachment(middle, -margin);
+    fdlModel.top = new FormAttachment(wPreviousGroup, margin);
+    wlModel.setLayoutData(fdlModel);
+  }
+
+  private Group generateGroup(Composite wParentComp, String label) {
+    Group wSettingsGroup = new Group(wParentComp, SWT.SHADOW_NONE);
+    PropsUi.setLook(wSettingsGroup);
+    wSettingsGroup.setText(label);
+
+    FormLayout settingsGroupLayout = new FormLayout();
+    settingsGroupLayout.marginWidth = 10;
+    settingsGroupLayout.marginHeight = 10;
+    wSettingsGroup.setLayout(settingsGroupLayout);
+    return wSettingsGroup;
+  }
+
+  private Pair<Composite, CTabItem> generateTab(CTabFolder wTabFolder, String label) {
+    CTabItem wTab = new CTabItem(wTabFolder, SWT.NONE);
+    wTab.setFont(GuiResource.getInstance().getFontDefault());
+    wTab.setText(label);
+
+    Composite wComp = new Composite(wTabFolder, SWT.NONE);
+    PropsUi.setLook(wComp);
+
+    FormLayout generalLayout = new FormLayout();
+    generalLayout.marginWidth = 3;
+    generalLayout.marginHeight = 3;
+    wComp.setLayout(generalLayout);
+
+    FormData fdGeneralComp = new FormData();
+    fdGeneralComp.left = new FormAttachment(0, 0);
+    fdGeneralComp.top = new FormAttachment(0, 0);
+    fdGeneralComp.right = new FormAttachment(100, 0);
+    fdGeneralComp.bottom = new FormAttachment(100, 0);
+    wComp.setLayoutData(fdGeneralComp);
+
+    return new ImmutablePair<Composite, CTabItem>(wComp, wTab);
   }
 
   private Pair<TextVar, Button> generateFileInput(ModifyListener lsMod, int middle, int margin,
@@ -531,7 +608,10 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     wMainStreamField.setText(Const.NVL(input.getMainStreamField(), ""));
     wLookupField.setText(Const.NVL(input.getLookupField(), ""));
     wMatchField.setText(Const.NVL(input.getOutputMatchField(), ""));
-    wModel.setText(Const.NVL(input.getEmbeddingModel().getDescription(), SEmbeddingModel.ONNX_MODEL.getDescription()));
+    wModel.setText(Const.NVL(input.getEmbeddingModel().getDescription(),
+        SEmbeddingModel.ONNX_MODEL.getDescription()));
+    wStore.setText(Const.NVL(input.getEmbeddingStore().getDescription(),
+        SEmbeddingStore.IN_MEMORY.getDescription()));
     wOnnxFilename.setText(Const.NVL(input.getOnnxFilename(), ""));
     wTokenizerFilename.setText(Const.NVL(input.getTokenizerFilename(), ""));
 
@@ -556,7 +636,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     dispose();
   }
 
-  private void activeAlgorithm() {
+  private void activeModel() {
     SEmbeddingModel model = SemanticSearchMeta.SEmbeddingModel.lookupDescription(wModel.getText());
 
     boolean enable = (model == SEmbeddingModel.ONNX_MODEL);
@@ -577,6 +657,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     input.setLookupField(wLookupField.getText());
 
     input.setEmbeddingModel(SEmbeddingModel.lookupDescription(wModel.getText()));
+    input.setEmbeddingStore(SEmbeddingStore.lookupDescription(wStore.getText()));
     input.setOnnxFilename(wOnnxFilename.getText());
     input.setTokenizerFilename(wTokenizerFilename.getText());
 

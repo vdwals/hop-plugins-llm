@@ -17,13 +17,10 @@ package org.apache.hop.pipeline.transforms.semanticsearch;
 
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.embedding.AllMiniLmL6V2EmbeddingModel;
-import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.OnnxEmbeddingModel;
 import dev.langchain4j.model.embedding.PoolingMode;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
-import java.io.IOException;
 import java.util.List;
 import org.apache.hop.core.IRowSet;
 import org.apache.hop.core.exception.HopException;
@@ -48,18 +45,6 @@ import ai.djl.util.ClassLoaderUtils;
  */
 public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSearchData> {
   private static final Class<?> PKG = SemanticSearchMeta.class; // For Translator
-
-  public static void main(String[] args) throws IOException {
-
-    String text =
-        "Let's demonstrate that embedding can be done within a Java process and entirely offline.";
-
-    // requires "langchain4j-embeddings-all-minilm-l6-v2" Maven/Gradle dependency, see pom.xml
-    EmbeddingModel embeddingModel = new AllMiniLmL6V2EmbeddingModel();
-
-    Embedding inProcessEmbedding = embeddingModel.embed(text).content();
-    System.out.println(inProcessEmbedding);
-  }
 
   public SemanticSearch(TransformMeta transformMeta, SemanticSearchMeta meta,
       SemanticSearchData data, int copyNr, PipelineMeta pipelineMeta, Pipeline pipeline) {
@@ -116,7 +101,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
             if (data.indexOfCachedFields[fi] < 0) {
               // The field is unreachable !
               throw new HopException(BaseMessages.getString(PKG,
-                  "FuzzyMatch.Exception.CouldnotFindLookField", lookupValue.getName()));
+                  "SemanticSearch.Exception.CouldnotFindLookField", lookupValue.getName()));
             }
             additionalFieldValueMeta = data.infoMeta.getValueMeta(data.indexOfCachedFields[fi]);
             additionalFieldValueMeta.setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
@@ -163,7 +148,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
             data.infoCache.getString(storeData)));
       }
 
-      addToVector(textValue, rowData);
+      addToVector(textValue, storeData);
 
       rowData = getRowFrom(rowSet);
     }
@@ -187,6 +172,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
             "SemanticSearch.Exception.CouldnotFindMainField", meta.getMainStreamField()));
       }
     }
+    
     Object[] add;
     if (row[data.indexOfMainField] == null) {
       add = RowDataUtil.allocateRowData(data.outputRowMeta.size());
@@ -259,7 +245,8 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       data.readLookupValues = false;
 
       // Read values from lookup transform (look)
-      if (!readLookupValues()) {
+      boolean lookupValuesSucceded = readLookupValues();
+      if (!lookupValuesSucceded) {
         logError(
             BaseMessages.getString(PKG, "SemanticSearch.Log.UnableToReadDataFromLookupStream"));
         setErrors(1);

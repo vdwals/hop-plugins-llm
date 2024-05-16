@@ -106,20 +106,15 @@
 				<directory>${project.build.sourceDirectory}</directory>
 				<includes>
 					<include>**/*.properties</include>
+					<include>**/*.svg</include>
 				</includes>
 			</resource>
 			<resource>
 				<targetPath>${project.build.outputDirectory}</targetPath>
 				<directory>${project.basedir}/src/main/resources</directory>
 				<includes>
+					<include>**/*.properties</include>
 					<include>**/*.svg</include>
-				</includes>
-			</resource>
-			<resource>
-				<targetPath>${project.build.outputDirectory}</targetPath>
-				<directory>${project.basedir}/src/main/scripts</directory>
-				<includes>
-					<include>**/**.py</include>
 				</includes>
 			</resource>
 		</resources>
@@ -159,7 +154,6 @@
 				</configuration>
 				<executions>
 					<execution>
-						<id>make-assembly</id>
 						<phase>package</phase>
 						<goals>
 							<goal>single</goal>
