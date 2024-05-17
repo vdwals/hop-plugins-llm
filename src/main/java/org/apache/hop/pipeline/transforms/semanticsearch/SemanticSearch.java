@@ -21,10 +21,12 @@ import dev.langchain4j.model.embedding.OnnxEmbeddingModel;
 import dev.langchain4j.model.embedding.PoolingMode;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.hop.core.Const;
 import org.apache.hop.core.IRowSet;
 import org.apache.hop.core.exception.HopException;
-import org.apache.hop.core.exception.HopTransformException;
 import org.apache.hop.core.exception.HopValueException;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
@@ -74,40 +76,55 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     IRowSet rowSet = findInputRowSet(data.infoStream.getTransformName());
     Object[] rowData = getRowFrom(rowSet); // rows are originating from "lookup_from"
 
+    int indexOfLookupTextField = -1;
+    int indexOfLookupKeyField = -1;
+
     while (rowData != null) {
       if (firstRun) {
         data.infoMeta = rowSet.getRowMeta().clone();
         // Check lookup field
-        int indexOfLookupField = data.infoMeta.indexOfValue(resolve(meta.getLookupField()));
-        if (indexOfLookupField < 0) {
+        indexOfLookupTextField = data.infoMeta.indexOfValue(resolve(meta.getLookupTextField()));
+        if (indexOfLookupTextField < 0) {
           // The field is unreachable !
           throw new HopException(BaseMessages.getString(PKG,
-              "SemanticSearch.Exception.CouldnotFindLookField", meta.getLookupField()));
+              "SemanticSearch.Exception.CouldnotFindLookField", meta.getLookupTextField()));
         }
-        data.infoCache = new RowMeta();
-        IValueMeta keyValueMeta = data.infoMeta.getValueMeta(indexOfLookupField);
-        keyValueMeta.setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
-        data.infoCache.addValueMeta(keyValueMeta);
-        // Add key
-        data.indexOfCachedFields[0] = indexOfLookupField;
+        indexOfLookupKeyField = data.infoMeta.indexOfValue(resolve(meta.getLookupKeyField()));
+        if (indexOfLookupKeyField < 0) {
+          // The field is unreachable !
+          throw new HopException(BaseMessages.getString(PKG,
+              "SemanticSearch.Exception.CouldnotFindLookField", meta.getLookupKeyField()));
+        }
+        if (data.returnMatchValue) {
+          // Text value needs to be cached separately
+          data.infoCache = new RowMeta();
+          IValueMeta textValueMeta = data.infoMeta.getValueMeta(indexOfLookupTextField);
+          textValueMeta.setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
+          data.infoCache.addValueMeta(textValueMeta);
+        }
+
+        if (data.returnKeyValue) {
+          // Keyvalue does not need to be cached separately
+          IValueMeta keyValueMeta = data.infoMeta.getValueMeta(indexOfLookupKeyField);
+          keyValueMeta.setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
+          data.infoCache.addValueMeta(keyValueMeta);
+        }
 
         // Check additional fields
         if (data.addAdditionalFields) {
           IValueMeta additionalFieldValueMeta;
           for (int i = 0; i < meta.getLookupValues().size(); i++) {
             SLookupValue lookupValue = meta.getLookupValues().get(i);
-            int fi = i + 1;
-            data.indexOfCachedFields[fi] = data.infoMeta.indexOfValue(lookupValue.getName());
-            if (data.indexOfCachedFields[fi] < 0) {
+            data.indexOfCachedFields[i] = data.infoMeta.indexOfValue(lookupValue.getName());
+            if (data.indexOfCachedFields[i] < 0) {
               // The field is unreachable !
               throw new HopException(BaseMessages.getString(PKG,
                   "SemanticSearch.Exception.CouldnotFindLookField", lookupValue.getName()));
             }
-            additionalFieldValueMeta = data.infoMeta.getValueMeta(data.indexOfCachedFields[fi]);
+            additionalFieldValueMeta = data.infoMeta.getValueMeta(data.indexOfCachedFields[i]);
             additionalFieldValueMeta.setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
             data.infoCache.addValueMeta(additionalFieldValueMeta);
           }
-          data.nrCachedFields += meta.getLookupValues().size();
         }
 
         firstRun = false;
@@ -121,23 +138,22 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       // Look up the keys in the source rows
       // and store values in cache
 
-      Object[] storeData = new Object[data.nrCachedFields];
-      String textValue = "";
-      // Add key field
-      if (rowData[data.indexOfCachedFields[0]] != null) {
-        IValueMeta fromStreamRowMeta =
-            rowSet.getRowMeta().getValueMeta(data.indexOfCachedFields[0]);
-        textValue = fromStreamRowMeta.getString(rowData[data.indexOfCachedFields[0]]);
-      }
+      // Store textfield
+      String textValue = storeFieldValue(rowSet, rowData, indexOfLookupTextField);
+      // Store keyfield
+      String keyValue = storeFieldValue(rowSet, rowData, indexOfLookupKeyField);
+
+
+      Object[] storeData = new Object[data.indexOfCachedFields.length];
       storeData[0] = textValue;
 
       // Add additional fields?
-      for (int i = 1; i < data.nrCachedFields; i++) {
+      for (int i = 1; i < data.indexOfCachedFields.length; i++) {
         IValueMeta fromStreamRowMeta =
             rowSet.getRowMeta().getValueMeta(data.indexOfCachedFields[i]);
         if (fromStreamRowMeta.isStorageBinaryString()) {
-          storeData[i] =
-              fromStreamRowMeta.convertToNormalStorageType(rowData[data.indexOfCachedFields[i]]);
+          storeData[i] = fromStreamRowMeta
+              .convertToNormalStorageType(rowData[data.indexOfCachedFields[i]]);
         } else {
           storeData[i] = rowData[data.indexOfCachedFields[i]];
         }
@@ -148,7 +164,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
             data.infoCache.getString(storeData)));
       }
 
-      addToVector(textValue, storeData);
+      addToVector(textValue, keyValue, storeData);
 
       rowData = getRowFrom(rowSet);
     }
@@ -156,7 +172,20 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     return true;
   }
 
-  private Object[] lookupValues(IRowMeta rowMeta, Object[] row) throws HopException {
+  private String storeFieldValue(IRowSet rowSet, Object[] rowData, int extractionIndex)
+      throws HopValueException {
+    String textValue = "";
+    // Add text field
+    if (rowData[extractionIndex] != null) {
+      IValueMeta fromStreamRowMeta =
+          rowSet.getRowMeta().getValueMeta(extractionIndex);
+      textValue = fromStreamRowMeta.getString(rowData[extractionIndex]);
+    }
+
+    return textValue;
+  }
+
+  private List<Object[]> lookupValues(IRowMeta rowMeta, Object[] row) throws HopException {
     if (first) {
       first = false;
 
@@ -172,26 +201,27 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
             "SemanticSearch.Exception.CouldnotFindMainField", meta.getMainStreamField()));
       }
     }
-    
-    Object[] add;
+
     if (row[data.indexOfMainField] == null) {
-      add = RowDataUtil.allocateRowData(data.outputRowMeta.size());
-    } else {
-      try {
-        add = getFromVector(row);
-      } catch (Exception e) {
-        throw new HopTransformException(e);
-      }
+      ArrayList<Object[]> arrayList = new ArrayList<Object[]>(1);
+      arrayList.add(RowDataUtil.addRowData(row, rowMeta.size(),
+          RowDataUtil.allocateRowData(data.outputRowMeta.size())));
+      return arrayList;
     }
-    return RowDataUtil.addRowData(row, rowMeta.size(), add);
+
+    return getFromVector(row).stream()
+        .map(retval -> RowDataUtil.addRowData(row, rowMeta.size(), retval))
+        .collect(Collectors.toList());
   }
 
-  private void addToVector(String textValue, Object[] lookupRowValues) throws HopException {
+  private void addToVector(String textValue, String keyValue, Object[] lookupRowValues)
+      throws HopException {
     try {
       TextSegment segment = TextSegment.from(textValue);
       Embedding embedding = data.embeddingModel.embed(segment).content();
-      String embeddingId = data.embeddingStore.add(embedding);
-      data.look.put(embeddingId, lookupRowValues);
+      data.embeddingStore.add(keyValue, embedding);
+
+      data.look.put(keyValue, lookupRowValues);
 
     } catch (OutOfMemoryError o) {
       // exception out of memory
@@ -200,7 +230,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     }
   }
 
-  private Object[] getFromVector(Object[] keyRow) throws HopValueException {
+  private List<Object[]> getFromVector(Object[] keyRow) throws HopValueException {
     if (isDebug()) {
       logDebug(BaseMessages.getString(PKG, "SemanticSearch.Log.ReadingMainStreamRow",
           getInputRowMeta().getString(keyRow)));
@@ -210,33 +240,43 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
 
     Embedding queryEmbedding = data.embeddingModel.embed(lookupValueString).content();
     List<EmbeddingMatch<TextSegment>> relevant =
-        data.embeddingStore.findRelevant(queryEmbedding, 1);
+        data.embeddingStore.findRelevant(queryEmbedding, data.maxResults);
 
-    EmbeddingMatch<TextSegment> embeddingMatch = relevant.get(0);
-    String embeddingId = embeddingMatch.embeddingId();
+    List<Object[]> retList = new ArrayList<Object[]>(data.maxResults);
 
-    Object[] matchedRow = data.look.get(embeddingId);
+    for (EmbeddingMatch<TextSegment> embeddingMatch : relevant) {
+      String key = embeddingMatch.embeddingId();
+      Double score = embeddingMatch.score();
 
-    Object[] retval = createRetval(keyRow, matchedRow);
+      Object[] matchedRow = data.look.get(key);
+      String value = (String) matchedRow[0];
 
-    return retval;
-  }
+      // Reserve room
+      Object[] retval = RowDataUtil.allocateRowData(data.outputRowMeta.size());
 
-  private Object[] createRetval(Object[] keyRow, Object[] matchedRow) {
-    // Reserve room
-    Object[] rowData = RowDataUtil.allocateRowData(data.outputRowMeta.size());
+      int index = 0;
+      if (data.returnMatchValue)
+        retval[index++] = value;
 
-    int index = 0;
-    rowData[index++] = matchedRow[0];
-    // Add additional return values?
-    if (data.addAdditionalFields) {
-      for (int i = 0; i < meta.getLookupValues().size(); i++) {
-        int nr = i + 1;
-        int nf = i + index;
-        rowData[nf] = matchedRow[nr];
+      if (data.returnKeyValue)
+        retval[index++] = key;
+
+      if (data.returnDistanceValue)
+        retval[index++] = score;
+
+      // Add additional return values?
+      if (data.addAdditionalFields) {
+        for (int i = 1; i < meta.getLookupValues().size(); i++) {
+          int nf = i + index;
+          keyRow[nf] = matchedRow[i];
+        }
       }
+
+      retList.add(retval);
     }
-    return rowData;
+
+
+    return retList;
   }
 
   @Override
@@ -273,12 +313,14 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     try {
 
       // Do the actual lookup in the hastable.
-      Object[] outputRow = lookupValues(getInputRowMeta(), r);
-      if (outputRow == null) {
+      List<Object[]> outputRow = lookupValues(getInputRowMeta(), r);
+      if (outputRow == null || outputRow.isEmpty() || outputRow.get(0) == null) {
         setOutputDone(); // signal end to receiver(s)
         return false;
       }
-      putRow(data.outputRowMeta, outputRow); // copy row to output rowset(s)
+      for (Object[] output : outputRow) {
+        putRow(data.outputRowMeta, output); // copy row to output rowset(s)
+      }
 
       if (checkFeedback(getLinesRead()) && log.isBasic()) {
         logBasic(BaseMessages.getString(PKG, "SemanticSearch.Log.LineNumber") + getLinesRead());
@@ -312,23 +354,24 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       logError(BaseMessages.getString(PKG, "SemanticSearch.Error.MainStreamFieldMissing"));
       return false;
     }
-    if (Utils.isEmpty(meta.getLookupField())) {
+    if (Utils.isEmpty(meta.getLookupTextField())) {
       logError(BaseMessages.getString(PKG, "SemanticSearch.Error.LookupStreamFieldMissing"));
       return false;
     }
-
-    // Checks output fields
-    String matchField = resolve(meta.getOutputMatchField());
-    if (Utils.isEmpty(matchField)) {
-      logError(BaseMessages.getString(PKG, "SemanticSearch.Error.OutputMatchFieldMissing"));
+    if (Utils.isEmpty(meta.getLookupKeyField())) {
+      logError(BaseMessages.getString(PKG, "SemanticSearch.Error.LookupStreamKeyFieldMissing"));
       return false;
     }
+
+    data.returnMatchValue = !Utils.isEmpty(resolve(meta.getOutputMatchField()));
+    data.returnKeyValue = !Utils.isEmpty(resolve(meta.getOutputKeyField()));
+    data.returnDistanceValue = !Utils.isEmpty(resolve(meta.getOutputDistanceField()));
 
     // Set the number of fields to cache
     // default value is one
     //
     int nrFields = 1;
-
+    
     if (!meta.getLookupValues().isEmpty()) {
       // cache also additional fields
       data.addAdditionalFields = true;
@@ -337,6 +380,8 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     data.indexOfCachedFields = new int[nrFields];
 
     data.readLookupValues = true;
+
+    data.maxResults = Const.toInt(resolve(meta.getMaximalValue()), 1);
 
     switch (meta.getEmbeddingModel()) {
       case ONNX_MODEL:

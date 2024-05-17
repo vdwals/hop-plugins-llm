@@ -38,6 +38,8 @@ public class SemanticSearchData extends BaseTransformData implements ITransformD
   public EmbeddingModel embeddingModel;
 
   public boolean readLookupValues;
+  
+  public int maxResults;
 
   /** index of main stream field */
   public int indexOfMainField;
@@ -53,13 +55,15 @@ public class SemanticSearchData extends BaseTransformData implements ITransformD
 
   public IRowMeta infoCache;
 
-  public int nrCachedFields;
+  public boolean returnMatchValue;
+  public boolean returnKeyValue;
+  public boolean returnDistanceValue;
 
   public SemanticSearchData() {
     super();
     this.look = new HashMap<>();
     this.indexOfMainField = -1;
     this.addAdditionalFields = false;
-    this.nrCachedFields = 1;
+    this.maxResults = 1;
   }
 }

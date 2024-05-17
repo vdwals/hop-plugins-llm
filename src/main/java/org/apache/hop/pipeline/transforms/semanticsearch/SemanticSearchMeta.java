@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package org.apache.hop.pipeline.transforms.semanticsearch;
@@ -26,7 +24,9 @@ import org.apache.hop.core.annotations.Transform;
 import org.apache.hop.core.exception.HopTransformException;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
+import org.apache.hop.core.row.value.ValueMetaNumber;
 import org.apache.hop.core.row.value.ValueMetaString;
+import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.metadata.api.HopMetadataProperty;
@@ -43,10 +43,7 @@ import org.apache.hop.pipeline.transform.stream.IStream.StreamType;
 import org.apache.hop.pipeline.transform.stream.Stream;
 import org.apache.hop.pipeline.transform.stream.StreamIcon;
 
-@Transform(
-    id = "SemanticSearch",
-    image = "SemanticSearch.svg",
-    name = "Semantic Search",
+@Transform(id = "SemanticSearch", image = "SemanticSearch.svg", name = "Semantic Search",
     description = "i18n::SemanticSearch.Description",
     categoryDescription = "i18n:org.apache.hop.pipeline.transform:BaseTransform.Category.Lookup",
     keywords = "i18n::SemanticSearchMeta.keyword")
@@ -60,7 +57,7 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   /** Embedding model type */
   @HopMetadataProperty(key = "embeddingModel", storeWithCode = true)
   private SEmbeddingModel embeddingModel;
-  
+
   @HopMetadataProperty(key = "onnxFileName")
   private String onnxFilename;
 
@@ -70,9 +67,17 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   @HopMetadataProperty(key = "from")
   private String lookupTransformName;
 
+  /** maximal number of results to return */
+  @HopMetadataProperty(key = "maximalValue")
+  private String maximalValue;
+
   /** field in lookup stream with which we look up values */
-  @HopMetadataProperty(key = "lookupfield")
-  private String lookupField;
+  @HopMetadataProperty(key = "lookuptextfield")
+  private String lookupTextField;
+
+  /** field in lookup stream with which we look up values */
+  @HopMetadataProperty(key = "lookupkeyfield")
+  private String lookupKeyField;
 
   /** field in input stream for which we lookup values */
   @HopMetadataProperty(key = "mainstreamfield")
@@ -81,6 +86,14 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   /** output match fieldname */
   @HopMetadataProperty(key = "outputmatchfield")
   private String outputMatchField;
+
+  /** output key fieldname */
+  @HopMetadataProperty(key = "outputkeyfield")
+  private String outputKeyField;
+
+  /** output distance fieldname */
+  @HopMetadataProperty(key = "outputdistancefield")
+  private String outputDistanceField;
 
   /** return these field values from lookup */
   @HopMetadataProperty(groupKey = "lookup", key = "value")
@@ -97,10 +110,14 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     this();
     this.setEmbeddingStore(m.getEmbeddingStore());
     this.setEmbeddingModel(m.getEmbeddingModel());
-    this.lookupField = m.lookupField;
+    this.lookupTextField = m.lookupTextField;
+    this.setLookupKeyField(m.getLookupKeyField());
     this.mainStreamField = m.mainStreamField;
     this.outputMatchField = m.outputMatchField;
+    this.setOutputKeyField(m.getOutputKeyField());
     m.lookupValues.forEach(v -> this.lookupValues.add(new SLookupValue(v)));
+    this.maximalValue = m.maximalValue;
+    this.setOutputDistanceField(m.getOutputDistanceField());
   }
 
   @Override
@@ -112,53 +129,63 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   public void setDefault() {
     setEmbeddingStore(SEmbeddingStore.IN_MEMORY);
     setEmbeddingModel(SEmbeddingModel.ONNX_MODEL);
-    lookupField = null;
+    lookupTextField = null;
+    setLookupKeyField(null);
     mainStreamField = null;
+    maximalValue = null;
     outputMatchField = BaseMessages.getString(PKG, "SemanticSearchMeta.OutputMatchFieldname");
+    setOutputKeyField(BaseMessages.getString(PKG, "SemanticSearchMeta.OutputKeyFieldname"));
+    setOutputDistanceField(
+        BaseMessages.getString(PKG, "SemanticSearchMeta.OutputDistanceFieldname"));
   }
 
   @Override
-  public void getFields(
-      IRowMeta inputRowMeta,
-      String name,
-      IRowMeta[] info,
-      TransformMeta nextTransform,
-      IVariables variables,
-      IHopMetadataProvider metadataProvider)
+  public void getFields(IRowMeta inputRowMeta, String name, IRowMeta[] info,
+      TransformMeta nextTransform, IVariables variables, IHopMetadataProvider metadataProvider)
       throws HopTransformException {
-    // Add match field
-    IValueMeta v = new ValueMetaString(variables.resolve(getOutputMatchField()));
-    v.setOrigin(name);
-    v.setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
-    inputRowMeta.addValueMeta(v);
+
+    if (!Utils.isEmpty(outputMatchField)) {
+      // Add match field
+      IValueMeta v = new ValueMetaString(variables.resolve(getOutputMatchField()));
+      v.setOrigin(name);
+      v.setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
+      inputRowMeta.addValueMeta(v);
+    }
+
+    if (!Utils.isEmpty(outputKeyField)) {
+      // Add distance field
+      IValueMeta v = new ValueMetaString(variables.resolve(getOutputKeyField()));
+      v.setOrigin(name);
+      v.setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
+      inputRowMeta.addValueMeta(v);
+    }
+
+    if (!Utils.isEmpty(outputDistanceField)) {
+      // Add distance field
+      IValueMeta v = new ValueMetaNumber(variables.resolve(getOutputDistanceField()));
+      v.setOrigin(name);
+      v.setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
+      inputRowMeta.addValueMeta(v);
+    }
 
     for (SLookupValue lookupValue : lookupValues) {
-      v = new ValueMetaString(lookupValue.getName());
+      IValueMeta v = new ValueMetaString(lookupValue.getName());
       v.setOrigin(name);
       inputRowMeta.addValueMeta(v);
     }
   }
 
   @Override
-  public void check(
-      List<ICheckResult> remarks,
-      PipelineMeta pipelineMeta,
-      TransformMeta transformMeta,
-      IRowMeta prev,
-      String[] input,
-      String[] output,
-      IRowMeta info,
-      IVariables variables,
-      IHopMetadataProvider metadataProvider) {
+  public void check(List<ICheckResult> remarks, PipelineMeta pipelineMeta,
+      TransformMeta transformMeta, IRowMeta prev, String[] input, String[] output, IRowMeta info,
+      IVariables variables, IHopMetadataProvider metadataProvider) {
     CheckResult cr;
 
     if (prev != null && prev.size() > 0) {
-      cr =
-          new CheckResult(
-              ICheckResult.TYPE_RESULT_OK,
-              BaseMessages.getString(
-                  PKG, "SemanticSearchMeta.CheckResult.TransformReceivingFields", prev.size() + ""),
-              transformMeta);
+      cr = new CheckResult(
+          ICheckResult.TYPE_RESULT_OK, BaseMessages.getString(PKG,
+              "SemanticSearchMeta.CheckResult.TransformReceivingFields", prev.size() + ""),
+          transformMeta);
       remarks.add(cr);
 
       // Starting from selected fields in ...
@@ -166,64 +193,59 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
       String mainField = variables.resolve(getMainStreamField());
       int idx = prev.indexOfValue(mainField);
       if (idx < 0) {
-        cr =
-            new CheckResult(
-                ICheckResult.TYPE_RESULT_ERROR,
-                BaseMessages.getString(
-                    PKG, "SemanticSearchMeta.CheckResult.MainFieldNotFound", mainField),
-                transformMeta);
+        cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, BaseMessages.getString(PKG,
+            "SemanticSearchMeta.CheckResult.MainFieldNotFound", mainField), transformMeta);
       } else {
-        cr =
-            new CheckResult(
-                ICheckResult.TYPE_RESULT_OK,
-                BaseMessages.getString(
-                    PKG, "SemanticSearchMeta.CheckResult.MainFieldFound", mainField),
-                transformMeta);
+        cr = new CheckResult(ICheckResult.TYPE_RESULT_OK,
+            BaseMessages.getString(PKG, "SemanticSearchMeta.CheckResult.MainFieldFound", mainField),
+            transformMeta);
       }
       remarks.add(cr);
 
     } else {
-      cr =
-          new CheckResult(
-              ICheckResult.TYPE_RESULT_ERROR,
-              BaseMessages.getString(
-                  PKG, "SemanticSearchMeta.CheckResult.CouldNotFindFieldsFromPreviousTransforms"),
-              transformMeta);
+      cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR,
+          BaseMessages.getString(PKG,
+              "SemanticSearchMeta.CheckResult.CouldNotFindFieldsFromPreviousTransforms"),
+          transformMeta);
       remarks.add(cr);
     }
 
     if (info != null && info.size() > 0) {
-      remarks.add(
-          new CheckResult(
-              ICheckResult.TYPE_RESULT_OK,
-              BaseMessages.getString(
-                  PKG,
-                  "SemanticSearchMeta.CheckResult.TransformReceivingLookupData",
-                  info.size() + ""),
-              transformMeta));
+      remarks.add(new CheckResult(
+          ICheckResult.TYPE_RESULT_OK, BaseMessages.getString(PKG,
+              "SemanticSearchMeta.CheckResult.TransformReceivingLookupData", info.size() + ""),
+          transformMeta));
 
       // Check the fields from the lookup stream!
-      String realLookupField = variables.resolve(getLookupField());
+      String realLookupTextField = variables.resolve(getLookupTextField());
 
-      int idx = info.indexOfValue(realLookupField);
+      int idx = info.indexOfValue(realLookupTextField);
       if (idx < 0) {
-        remarks.add(
-            new CheckResult(
-                ICheckResult.TYPE_RESULT_ERROR,
-                BaseMessages.getString(
-                    PKG,
-                    "SemanticSearchMeta.CheckResult.FieldNotFoundInLookupStream",
-                    realLookupField),
-                transformMeta));
+        remarks.add(new CheckResult(ICheckResult.TYPE_RESULT_ERROR,
+            BaseMessages.getString(PKG,
+                "SemanticSearchMeta.CheckResult.FieldNotFoundInLookupStream", realLookupTextField),
+            transformMeta));
       } else {
-        remarks.add(
-            new CheckResult(
-                ICheckResult.TYPE_RESULT_OK,
-                BaseMessages.getString(
-                    PKG,
-                    "SemanticSearchMeta.CheckResult.FieldFoundInTheLookupStream",
-                    realLookupField),
-                transformMeta));
+        remarks.add(new CheckResult(ICheckResult.TYPE_RESULT_OK,
+            BaseMessages.getString(PKG,
+                "SemanticSearchMeta.CheckResult.FieldFoundInTheLookupStream", realLookupTextField),
+            transformMeta));
+      }
+
+      // Check the fields from the lookup stream!
+      String realLookupKeyField = variables.resolve(getLookupKeyField());
+
+      idx = info.indexOfValue(realLookupKeyField);
+      if (idx < 0) {
+        remarks.add(new CheckResult(ICheckResult.TYPE_RESULT_ERROR,
+            BaseMessages.getString(PKG,
+                "SemanticSearchMeta.CheckResult.FieldNotFoundInLookupStream", realLookupKeyField),
+            transformMeta));
+      } else {
+        remarks.add(new CheckResult(ICheckResult.TYPE_RESULT_OK,
+            BaseMessages.getString(PKG,
+                "SemanticSearchMeta.CheckResult.FieldFoundInTheLookupStream", realLookupKeyField),
+            transformMeta));
       }
 
       StringBuilder errorMessage = new StringBuilder();
@@ -238,93 +260,64 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
         }
       }
       if (errorFound) {
-        errorMessage.insert(
-            0,
-            BaseMessages.getString(
-                    PKG, "SemanticSearchMeta.CheckResult.FieldsNotFoundInLookupStream2")
-                + Const.CR
+        errorMessage.insert(0,
+            BaseMessages.getString(PKG,
+                "SemanticSearchMeta.CheckResult.FieldsNotFoundInLookupStream2") + Const.CR
                 + Const.CR);
 
-        remarks.add(
-            new CheckResult(
-                ICheckResult.TYPE_RESULT_ERROR, errorMessage.toString(), transformMeta));
+        remarks.add(new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage.toString(),
+            transformMeta));
       } else {
-        remarks.add(
-            new CheckResult(
-                ICheckResult.TYPE_RESULT_OK,
-                BaseMessages.getString(
-                    PKG, "SemanticSearchMeta.CheckResult.AllFieldsFoundInTheLookupStream2"),
+        remarks
+            .add(new CheckResult(ICheckResult.TYPE_RESULT_OK,
+                BaseMessages.getString(PKG,
+                    "SemanticSearchMeta.CheckResult.AllFieldsFoundInTheLookupStream2"),
                 transformMeta));
       }
     } else {
-      remarks.add(
-          new CheckResult(
-              ICheckResult.TYPE_RESULT_ERROR,
-              BaseMessages.getString(
-                  PKG, "SemanticSearchMeta.CheckResult.FieldsNotFoundFromInLookupSep"),
-              transformMeta));
+      remarks.add(new CheckResult(ICheckResult.TYPE_RESULT_ERROR, BaseMessages.getString(PKG,
+          "SemanticSearchMeta.CheckResult.FieldsNotFoundFromInLookupSep"), transformMeta));
     }
 
     // See if the source transform is filled in!
     IStream infoStream = getTransformIOMeta().getInfoStreams().get(0);
     if (infoStream.getTransformMeta() == null) {
-      remarks.add(
-          new CheckResult(
-              ICheckResult.TYPE_RESULT_ERROR,
-              BaseMessages.getString(
-                  PKG, "SemanticSearchMeta.CheckResult.SourceTransformNotSelected"),
-              transformMeta));
+      remarks.add(new CheckResult(ICheckResult.TYPE_RESULT_ERROR,
+          BaseMessages.getString(PKG, "SemanticSearchMeta.CheckResult.SourceTransformNotSelected"),
+          transformMeta));
     } else {
-      remarks.add(
-          new CheckResult(
-              ICheckResult.TYPE_RESULT_OK,
-              BaseMessages.getString(
-                  PKG, "SemanticSearchMeta.CheckResult.SourceTransformIsSelected"),
-              transformMeta));
+      remarks.add(new CheckResult(ICheckResult.TYPE_RESULT_OK,
+          BaseMessages.getString(PKG, "SemanticSearchMeta.CheckResult.SourceTransformIsSelected"),
+          transformMeta));
 
       // See if the transform exists!
       //
       if (info != null) {
-        remarks.add(
-            new CheckResult(
-                ICheckResult.TYPE_RESULT_OK,
-                BaseMessages.getString(
-                    PKG,
-                    "SemanticSearchMeta.CheckResult.SourceTransformExist",
-                    infoStream.getTransformName() + ""),
-                transformMeta));
+        remarks.add(new CheckResult(ICheckResult.TYPE_RESULT_OK,
+            BaseMessages.getString(PKG, "SemanticSearchMeta.CheckResult.SourceTransformExist",
+                infoStream.getTransformName() + ""),
+            transformMeta));
       } else {
-        remarks.add(
-            new CheckResult(
-                ICheckResult.TYPE_RESULT_ERROR,
-                BaseMessages.getString(
-                    PKG,
-                    "SemanticSearchMeta.CheckResult.SourceTransformDoesNotExist",
-                    infoStream.getTransformName() + ""),
-                transformMeta));
+        remarks.add(new CheckResult(ICheckResult.TYPE_RESULT_ERROR,
+            BaseMessages.getString(PKG,
+                "SemanticSearchMeta.CheckResult.SourceTransformDoesNotExist",
+                infoStream.getTransformName() + ""),
+            transformMeta));
       }
     }
 
     // See if we have input streams leading to this transform!
     if (input.length >= 2) {
-      remarks.add(
-          new CheckResult(
-              ICheckResult.TYPE_RESULT_OK,
-              BaseMessages.getString(
-                  PKG,
-                  "SemanticSearchMeta.CheckResult.TransformReceivingInfoFromInputTransforms",
-                  input.length + ""),
-              transformMeta));
+      remarks.add(new CheckResult(ICheckResult.TYPE_RESULT_OK,
+          BaseMessages.getString(PKG,
+              "SemanticSearchMeta.CheckResult.TransformReceivingInfoFromInputTransforms",
+              input.length + ""),
+          transformMeta));
     } else {
-      remarks.add(
-          new CheckResult(
-              ICheckResult.TYPE_RESULT_ERROR,
-              BaseMessages.getString(
-                  PKG,
-                  "SemanticSearchMeta.CheckResult.NeedAtLeast2InputStreams",
-                  Const.CR,
-                  Const.CR),
-              transformMeta));
+      remarks.add(new CheckResult(
+          ICheckResult.TYPE_RESULT_ERROR, BaseMessages.getString(PKG,
+              "SemanticSearchMeta.CheckResult.NeedAtLeast2InputStreams", Const.CR, Const.CR),
+          transformMeta));
     }
   }
 
@@ -373,13 +366,9 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
 
       ioMeta = new TransformIOMeta(true, true, false, false, false, false);
 
-      IStream stream =
-          new Stream(
-              StreamType.INFO,
-              null,
-              BaseMessages.getString(PKG, "SemanticSearchMeta.InfoStream.Description"),
-              StreamIcon.INFO,
-              lookupTransformName);
+      IStream stream = new Stream(StreamType.INFO, null,
+          BaseMessages.getString(PKG, "SemanticSearchMeta.InfoStream.Description"), StreamIcon.INFO,
+          lookupTransformName);
       ioMeta.addStream(stream);
       setTransformIOMeta(ioMeta);
     }
@@ -410,8 +399,8 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
    *
    * @return value of lookupField
    */
-  public String getLookupField() {
-    return lookupField;
+  public String getLookupTextField() {
+    return lookupTextField;
   }
 
   /**
@@ -419,8 +408,8 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
    *
    * @param lookupField value of lookupField
    */
-  public void setLookupField(String lookupField) {
-    this.lookupField = lookupField;
+  public void setLookupTextField(String lookupField) {
+    this.lookupTextField = lookupField;
   }
 
   /**
@@ -493,8 +482,42 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     this.lookupValues = lookupValues;
   }
 
+  public String getLookupKeyField() {
+    return lookupKeyField;
+  }
+
+  public void setLookupKeyField(String lookupKeyField) {
+    this.lookupKeyField = lookupKeyField;
+  }
+
+  public String getOutputKeyField() {
+    return outputKeyField;
+  }
+
+  public void setOutputKeyField(String outputKeyField) {
+    this.outputKeyField = outputKeyField;
+  }
+
+  public String getMaximalValue() {
+    return maximalValue;
+  }
+
+  public void setMaximalValue(String maximalValue) {
+    this.maximalValue = maximalValue;
+  }
+
+  public String getOutputDistanceField() {
+    return outputDistanceField;
+  }
+
+  public void setOutputDistanceField(String outputDistanceField) {
+    this.outputDistanceField = outputDistanceField;
+  }
+
   public enum SEmbeddingStore implements IEnumHasCodeAndDescription {
-    IN_MEMORY("inmemory", BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingstore.inmemory"));
+    IN_MEMORY("inmemory",
+        BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingstore.inmemory"));
+
     private final String code;
     private final String description;
 
@@ -508,8 +531,8 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     }
 
     public static SEmbeddingStore lookupDescription(String description) {
-      return IEnumHasCodeAndDescription.lookupDescription(
-          SEmbeddingStore.class, description, IN_MEMORY);
+      return IEnumHasCodeAndDescription.lookupDescription(SEmbeddingStore.class, description,
+          IN_MEMORY);
     }
 
     public static SEmbeddingStore lookupCode(String code) {
@@ -538,8 +561,8 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   }
 
   public enum SEmbeddingModel implements IEnumHasCodeAndDescription {
-    ONNX_MODEL(
-        "onnx", BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingmodel.onnx"));
+    ONNX_MODEL("onnx", BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingmodel.onnx"));
+
     private final String code;
     private final String description;
 
@@ -553,8 +576,8 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     }
 
     public static SEmbeddingModel lookupDescription(String description) {
-      return IEnumHasCodeAndDescription.lookupDescription(
-          SEmbeddingModel.class, description, ONNX_MODEL);
+      return IEnumHasCodeAndDescription.lookupDescription(SEmbeddingModel.class, description,
+          ONNX_MODEL);
     }
 
     public static SEmbeddingModel lookupCode(String code) {
