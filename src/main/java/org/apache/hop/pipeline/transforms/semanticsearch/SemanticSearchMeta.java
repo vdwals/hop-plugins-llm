@@ -98,6 +98,12 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   /** return these field values from lookup */
   @HopMetadataProperty(groupKey = "lookup", key = "value")
   private List<SLookupValue> lookupValues;
+  
+  @HopMetadataProperty(
+      key = "connection",
+      injectionKey = "connection",
+      injectionKeyDescription = "SemanticSearchMeta.Injection.connection")
+  private String neo4JConnectionName;
 
   public SemanticSearchMeta() {
     super();
@@ -108,6 +114,7 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
 
   public SemanticSearchMeta(SemanticSearchMeta m) {
     this();
+    this.setNeo4JConnectionName(m.getNeo4JConnectionName());
     this.setEmbeddingStore(m.getEmbeddingStore());
     this.setEmbeddingModel(m.getEmbeddingModel());
     this.lookupTextField = m.lookupTextField;
@@ -129,6 +136,7 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   public void setDefault() {
     setEmbeddingStore(SEmbeddingStore.IN_MEMORY);
     setEmbeddingModel(SEmbeddingModel.ONNX_MODEL);
+    setNeo4JConnectionName(null);
     lookupTextField = null;
     setLookupKeyField(null);
     mainStreamField = null;
@@ -514,9 +522,18 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     this.outputDistanceField = outputDistanceField;
   }
 
+  public String getNeo4JConnectionName() {
+    return neo4JConnectionName;
+  }
+
+  public void setNeo4JConnectionName(String connectionName) {
+    this.neo4JConnectionName = connectionName;
+  }
+
   public enum SEmbeddingStore implements IEnumHasCodeAndDescription {
     IN_MEMORY("inmemory",
-        BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingstore.inmemory"));
+        BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingstore.inmemory")), NEO4J("neo4j",
+            BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingstore.neo4j"));
 
     private final String code;
     private final String description;

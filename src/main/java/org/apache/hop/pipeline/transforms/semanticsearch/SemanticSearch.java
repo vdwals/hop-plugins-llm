@@ -21,11 +21,13 @@ import dev.langchain4j.model.embedding.OnnxEmbeddingModel;
 import dev.langchain4j.model.embedding.PoolingMode;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import dev.langchain4j.store.embedding.neo4j.Neo4jEmbeddingStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.IRowSet;
+import org.apache.hop.core.exception.HopConfigException;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopValueException;
 import org.apache.hop.core.row.IRowMeta;
@@ -34,6 +36,7 @@ import org.apache.hop.core.row.RowDataUtil;
 import org.apache.hop.core.row.RowMeta;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.neo4j.shared.NeoConnection;
 import org.apache.hop.pipeline.Pipeline;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransform;
@@ -152,8 +155,8 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
         IValueMeta fromStreamRowMeta =
             rowSet.getRowMeta().getValueMeta(data.indexOfCachedFields[i]);
         if (fromStreamRowMeta.isStorageBinaryString()) {
-          storeData[i] = fromStreamRowMeta
-              .convertToNormalStorageType(rowData[data.indexOfCachedFields[i]]);
+          storeData[i] =
+              fromStreamRowMeta.convertToNormalStorageType(rowData[data.indexOfCachedFields[i]]);
         } else {
           storeData[i] = rowData[data.indexOfCachedFields[i]];
         }
@@ -177,8 +180,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     String textValue = "";
     // Add text field
     if (rowData[extractionIndex] != null) {
-      IValueMeta fromStreamRowMeta =
-          rowSet.getRowMeta().getValueMeta(extractionIndex);
+      IValueMeta fromStreamRowMeta = rowSet.getRowMeta().getValueMeta(extractionIndex);
       textValue = fromStreamRowMeta.getString(rowData[extractionIndex]);
     }
 
@@ -348,7 +350,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     if (!super.init()) {
       return false;
     }
-
+    
     // Check lookup and main stream field
     if (Utils.isEmpty(meta.getMainStreamField())) {
       logError(BaseMessages.getString(PKG, "SemanticSearch.Error.MainStreamFieldMissing"));
@@ -367,11 +369,9 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     data.returnKeyValue = !Utils.isEmpty(resolve(meta.getOutputKeyField()));
     data.returnDistanceValue = !Utils.isEmpty(resolve(meta.getOutputDistanceField()));
 
-    // Set the number of fields to cache
-    // default value is one
-    //
+    // Set the number of fields to cache default value is one
     int nrFields = 1;
-    
+
     if (!meta.getLookupValues().isEmpty()) {
       // cache also additional fields
       data.addAdditionalFields = true;
@@ -410,6 +410,31 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
         data.embeddingStore = new InMemoryEmbeddingStore<TextSegment>();
         break;
 
+      case NEO4J:
+        NeoConnection neoConnection;
+        try {
+          neoConnection = metadataProvider.getSerializer(NeoConnection.class)
+              .load(resolve(meta.getNeo4JConnectionName()));
+        } catch (HopException e) {
+          log.logError("Could not gencsv Neo4j connection '"
+              + resolve(meta.getNeo4JConnectionName()) + "' from the metastore", e);
+          return false;
+        }
+        if (neoConnection == null) {
+          log.logError("Connection '" + resolve(meta.getNeo4JConnectionName())
+              + "' could not be found in the metadata: " + metadataProvider.getDescription());
+          return false;
+        }
+        try {
+          data.embeddingStore =
+              Neo4jEmbeddingStore.builder().driver(neoConnection.getDriver(log, this))
+                  .dimension(1536).databaseName(neoConnection.getDatabaseName()).build();
+        } catch (HopConfigException e) {
+          log.logError("Unable to get or create Neo4j database driver for database '"
+              + neoConnection.getName() + "'", e);
+        }
+        break;
+
       default:
         logError(BaseMessages.getString(PKG, "SemanticSearch.Error.EmbeddingStoreInvalid"));
         return false;
@@ -428,7 +453,6 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
 
     Thread.currentThread().setContextClassLoader(ClassLoaderUtils.class.getClassLoader());
     data.embeddingModel = new OnnxEmbeddingModel(onnxFile, tokenizerFile, PoolingMode.MEAN);
-    // data.embeddingModel = new AllMiniLmL6V2EmbeddingModel();
 
     Thread.currentThread().setContextClassLoader(contextClassLoader);
   }

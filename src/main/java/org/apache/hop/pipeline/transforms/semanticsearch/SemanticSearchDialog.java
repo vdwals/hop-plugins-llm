@@ -28,6 +28,7 @@ import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.neo4j.shared.NeoConnection;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.ITransformDialog;
 import org.apache.hop.pipeline.transform.TransformMeta;
@@ -42,6 +43,7 @@ import org.apache.hop.ui.core.dialog.MessageBox;
 import org.apache.hop.ui.core.gui.GuiResource;
 import org.apache.hop.ui.core.widget.ColumnInfo;
 import org.apache.hop.ui.core.widget.ComboVar;
+import org.apache.hop.ui.core.widget.MetaSelectionLine;
 import org.apache.hop.ui.core.widget.TableView;
 import org.apache.hop.ui.core.widget.TextVar;
 import org.apache.hop.ui.pipeline.transform.BaseTransformDialog;
@@ -92,6 +94,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
   private Button wbbTokenizerFilename;
 
   private Button wGetLookup;
+
+  private MetaSelectionLine<NeoConnection> wNeo4JConnection;
 
   private final SemanticSearchMeta input;
   private boolean gotPreviousFields = false;
@@ -164,9 +168,10 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
 
     // Source transform line...
-    List<String> transformNames =
+    List<String> collect =
         pipelineMeta.findPreviousTransforms(pipelineMeta.findTransform(transformName), true)
             .stream().map(TransformMeta::getName).collect(Collectors.toList());
+    String[] transformNames = (String[]) collect.toArray(new String[collect.size()]);
 
     wTransform = generateCCombo(middle, margin, wTransformName, wLookupGroup, transformNames,
         e -> setComboBoxesLookup(),
@@ -308,19 +313,25 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     Group wStoreGroup = generateGroup(wStoreComp,
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
 
-    // Model
-    generateLabel(middle, margin, wSettingsGroup, wStoreGroup,
+    // Storage
+    wStore = generateCCombo(middle, margin, wSettingsGroup, wStoreGroup,
+        SemanticSearchMeta.SEmbeddingStore.getDescriptions(), e -> activeModel(),
         BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Label"));
-
-    wStore = new CCombo(wStoreGroup, SWT.BORDER | SWT.READ_ONLY);
-    PropsUi.setLook(wStore);
-    FormData fdStore = new FormData();
-    fdStore.left = new FormAttachment(middle, 0);
-    fdStore.top = new FormAttachment(wSettingsGroup, margin);
-    fdStore.right = new FormAttachment(100, -margin);
-    wStore.setLayoutData(fdStore);
-    wStore.setItems(SemanticSearchMeta.SEmbeddingStore.getDescriptions());
-    wStore.addListener(SWT.Selection, e -> activeModel());
+    
+    wNeo4JConnection = new MetaSelectionLine<>(variables, metadataProvider, NeoConnection.class,
+        wStoreGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER, "Neo4j Connection",
+        "The name of the Neo4j connection to use");
+    PropsUi.setLook(wNeo4JConnection);
+    FormData fdConnection = new FormData();
+    fdConnection.left = new FormAttachment(0, 0);
+    fdConnection.right = new FormAttachment(100, 0);
+    fdConnection.top = new FormAttachment(wStore, margin);
+    wNeo4JConnection.setLayoutData(fdConnection);
+    try {
+      wNeo4JConnection.fillItems();
+    } catch (Exception e) {
+      new ErrorDialog(shell, "Error", "Error getting list of connections", e);
+    }
 
     finalizeGroup(margin, wSettingsGroup, wStoreGroup);
 
@@ -473,13 +484,13 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
   }
 
   private CCombo generateCCombo(int middle, int margin, Control previousControl, Group wGroup,
-      List<String> transformNames, Listener listener, String label) {
+      String[] items, Listener listener, String label) {
 
     generateLabel(middle, margin, previousControl, wGroup, label);
 
     CCombo wCCombo = new CCombo(wGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
     PropsUi.setLook(wCCombo);
-    for (String transformMeta : transformNames) {
+    for (String transformMeta : items) {
       wCCombo.add(transformMeta);
     }
     wCCombo.addListener(SWT.Selection, listener);
@@ -588,6 +599,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
       logDebug(BaseMessages.getString(PKG, "SemanticSearchDialog.Log.GettingKeyInfo"));
     }
 
+    wNeo4JConnection.setText(Const.NVL(input.getNeo4JConnectionName(), ""));
     wMainStreamField.setText(Const.NVL(input.getMainStreamField(), ""));
     wLookupTextField.setText(Const.NVL(input.getLookupTextField(), ""));
     wLookupKeyField.setText(Const.NVL(input.getLookupKeyField(), ""));
@@ -639,6 +651,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
       return;
     }
 
+    input.setNeo4JConnectionName(wNeo4JConnection.getText());
     input.setMainStreamField(wMainStreamField.getText());
     input.setLookupTransformName(wTransform.getText());
     input.setLookupTextField(wLookupTextField.getText());
