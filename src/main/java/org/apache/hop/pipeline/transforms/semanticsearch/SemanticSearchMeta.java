@@ -100,10 +100,13 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   private List<SLookupValue> lookupValues;
   
   @HopMetadataProperty(
-      key = "connection",
-      injectionKey = "connection",
+      key = "neo4jConnection",
+      injectionKey = "neo4jConnection",
       injectionKeyDescription = "SemanticSearchMeta.Injection.connection")
   private String neo4JConnectionName;
+
+  @HopMetadataProperty(key = "chromaurl")
+  private String chromaUrl;
 
   public SemanticSearchMeta() {
     super();
@@ -530,10 +533,19 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     this.neo4JConnectionName = connectionName;
   }
 
+  public String getChromaUrl() {
+    return chromaUrl;
+  }
+
+  public void setChromaUrl(String chromaUrl) {
+    this.chromaUrl = chromaUrl;
+  }
+
   public enum SEmbeddingStore implements IEnumHasCodeAndDescription {
     IN_MEMORY("inmemory",
         BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingstore.inmemory")), NEO4J("neo4j",
-            BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingstore.neo4j"));
+            BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingstore.neo4j")), CHROMA("chroma",
+                BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingstore.chroma"));
 
     private final String code;
     private final String description;

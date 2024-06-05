@@ -20,6 +20,7 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.OnnxEmbeddingModel;
 import dev.langchain4j.model.embedding.PoolingMode;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
+import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.store.embedding.neo4j.Neo4jEmbeddingStore;
 import java.util.ArrayList;
@@ -350,7 +351,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     if (!super.init()) {
       return false;
     }
-    
+
     // Check lookup and main stream field
     if (Utils.isEmpty(meta.getMainStreamField())) {
       logError(BaseMessages.getString(PKG, "SemanticSearch.Error.MainStreamFieldMissing"));
@@ -435,6 +436,10 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
         }
         break;
 
+      case CHROMA:
+        data.embeddingStore = ChromaEmbeddingStore.builder().baseUrl(meta.getChromaUrl())
+            .collectionName(dev.langchain4j.internal.Utils.randomUUID()).build();
+        break;
       default:
         logError(BaseMessages.getString(PKG, "SemanticSearch.Error.EmbeddingStoreInvalid"));
         return false;

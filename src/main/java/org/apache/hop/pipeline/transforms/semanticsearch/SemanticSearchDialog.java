@@ -73,6 +73,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
   private CCombo wModel;
 
   private CCombo wStore;
+  private TextVar wChromaUrl;
 
   private ComboVar wMainStreamField;
 
@@ -281,7 +282,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     wbbTokenizerFilename = inputs.getRight();
     wTokenizerFilename = inputs.getLeft();
 
-    this.wMaxValue = generateTextVar(middle, margin, wMainStreamGroup, wSettingsGroup,
+    this.wMaxValue = generateTextVar(middle, margin, wTokenizerFilename, wSettingsGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Label"),
         BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Tooltip"));
 
@@ -315,12 +316,14 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
 
     // Storage
     wStore = generateCCombo(middle, margin, wSettingsGroup, wStoreGroup,
-        SemanticSearchMeta.SEmbeddingStore.getDescriptions(), e -> activeModel(),
+        SemanticSearchMeta.SEmbeddingStore.getDescriptions(), e -> activeStore(),
         BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Label"));
-    
+
     wNeo4JConnection = new MetaSelectionLine<>(variables, metadataProvider, NeoConnection.class,
-        wStoreGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER, "Neo4j Connection",
-        "The name of the Neo4j connection to use");
+        wStoreGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.neo4j.Label"),
+        BaseMessages.getString(PKG, "SemanticSearchDialog.neo4j.Tooltip"));
+
     PropsUi.setLook(wNeo4JConnection);
     FormData fdConnection = new FormData();
     fdConnection.left = new FormAttachment(0, 0);
@@ -333,6 +336,10 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
       new ErrorDialog(shell, "Error", "Error getting list of connections", e);
     }
 
+    this.wChromaUrl = generateTextVar(middle, margin, wNeo4JConnection, wStoreGroup,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.chroma.Label"),
+        BaseMessages.getString(PKG, "SemanticSearchDialog.chroma.Tooltip"));
+    
     finalizeGroup(margin, wSettingsGroup, wStoreGroup);
 
     // ///////////////////////////////////////////////////////////
@@ -599,20 +606,28 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
       logDebug(BaseMessages.getString(PKG, "SemanticSearchDialog.Log.GettingKeyInfo"));
     }
 
-    wNeo4JConnection.setText(Const.NVL(input.getNeo4JConnectionName(), ""));
     wMainStreamField.setText(Const.NVL(input.getMainStreamField(), ""));
     wLookupTextField.setText(Const.NVL(input.getLookupTextField(), ""));
     wLookupKeyField.setText(Const.NVL(input.getLookupKeyField(), ""));
     wMatchField.setText(Const.NVL(input.getOutputMatchField(), ""));
     wKeyField.setText(Const.NVL(input.getOutputKeyField(), ""));
+    wMaxValue.setText(Const.NVL(input.getMaximalValue(), ""));
     wDistanceField.setText(Const.NVL(input.getOutputDistanceField(), ""));
+    
     wModel.setText(Const.NVL(input.getEmbeddingModel().getDescription(),
         SEmbeddingModel.ONNX_MODEL.getDescription()));
+    activeModel();
+
+    wOnnxFilename.setText(Const.NVL(input.getOnnxFilename(), ""));
+    wTokenizerFilename.setText(Const.NVL(input.getTokenizerFilename(), ""));
+    
     wStore.setText(Const.NVL(input.getEmbeddingStore().getDescription(),
         SEmbeddingStore.IN_MEMORY.getDescription()));
-    wOnnxFilename.setText(Const.NVL(input.getOnnxFilename(), ""));
+    activeStore();
+    
+    wNeo4JConnection.setText(Const.NVL(input.getNeo4JConnectionName(), ""));
+    wChromaUrl.setText(Const.NVL(input.getChromaUrl(), ""));
     wMaxValue.setText(Const.NVL(input.getMaximalValue(), "1"));
-    wTokenizerFilename.setText(Const.NVL(input.getTokenizerFilename(), ""));
 
     for (int i = 0; i < input.getLookupValues().size(); i++) {
       SemanticSearchMeta.SLookupValue lookupValue = input.getLookupValues().get(i);
@@ -635,6 +650,13 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     dispose();
   }
 
+  private void activeStore() {
+    SEmbeddingStore store = SemanticSearchMeta.SEmbeddingStore.lookupDescription(wStore.getText());
+
+    wNeo4JConnection.setEnabled(store == SEmbeddingStore.NEO4J);
+    wChromaUrl.setEnabled(store == SEmbeddingStore.CHROMA);
+  }
+
   private void activeModel() {
     SEmbeddingModel model = SemanticSearchMeta.SEmbeddingModel.lookupDescription(wModel.getText());
 
@@ -652,6 +674,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     }
 
     input.setNeo4JConnectionName(wNeo4JConnection.getText());
+    input.setChromaUrl(wChromaUrl.getText());
+    
     input.setMainStreamField(wMainStreamField.getText());
     input.setLookupTransformName(wTransform.getText());
     input.setLookupTextField(wLookupTextField.getText());
@@ -665,6 +689,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
 
     input.setOutputMatchField(wMatchField.getText());
     input.setOutputKeyField(wKeyField.getText());
+    input.setMaximalValue(wMaxValue.getText());
     input.setOutputDistanceField(wDistanceField.getText());
 
     input.getLookupValues().clear();
