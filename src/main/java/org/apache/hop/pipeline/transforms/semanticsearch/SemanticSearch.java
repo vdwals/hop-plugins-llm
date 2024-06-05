@@ -19,6 +19,7 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.OnnxEmbeddingModel;
 import dev.langchain4j.model.embedding.PoolingMode;
+import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
@@ -400,6 +401,13 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
 
         setEmbeddingModel(onnxFile, tokenizerFile);
         break;
+        
+      case OPEN_AI:
+        if (Utils.isEmpty(meta.getOpenAiApiKey())) {
+          logError(BaseMessages.getString(PKG, "SemanticSearch.Error.APIKeyMissing"));
+          return false;
+        }
+        data.embeddingModel = OpenAiEmbeddingModel.withApiKey(meta.getOpenAiApiKey());
 
       default:
         logError(BaseMessages.getString(PKG, "SemanticSearch.Error.EmbeddingModelInvalid"));

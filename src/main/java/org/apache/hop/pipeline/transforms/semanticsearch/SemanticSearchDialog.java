@@ -653,8 +653,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
   private void activeStore() {
     SEmbeddingStore store = SemanticSearchMeta.SEmbeddingStore.lookupDescription(wStore.getText());
 
-    wNeo4JConnection.setEnabled(store == SEmbeddingStore.NEO4J);
-    wChromaUrl.setEnabled(store == SEmbeddingStore.CHROMA);
+    wNeo4JConnection.setVisible(store == SEmbeddingStore.NEO4J);
+    wChromaUrl.setVisible(store == SEmbeddingStore.CHROMA);
   }
 
   private void activeModel() {

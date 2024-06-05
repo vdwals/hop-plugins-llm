@@ -51,18 +51,21 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   private static final Class<?> PKG = SemanticSearchMeta.class; // For Translator
 
   /** Embedding store type */
-  @HopMetadataProperty(key = "embeddingStore", storeWithCode = true)
+  @HopMetadataProperty(key = "embeddingstore", storeWithCode = true)
   private SEmbeddingStore embeddingStore;
 
   /** Embedding model type */
-  @HopMetadataProperty(key = "embeddingModel", storeWithCode = true)
+  @HopMetadataProperty(key = "embeddingmodel", storeWithCode = true)
   private SEmbeddingModel embeddingModel;
 
-  @HopMetadataProperty(key = "onnxFileName")
+  @HopMetadataProperty(key = "onnxfilename")
   private String onnxFilename;
 
-  @HopMetadataProperty(key = "tokenizerFileName")
+  @HopMetadataProperty(key = "tokenizerfilename")
   private String tokenizerFilename;
+
+  @HopMetadataProperty(key = "openaiapikey")
+  private String openAiApiKey;
 
   @HopMetadataProperty(key = "from")
   private String lookupTransformName;
@@ -541,6 +544,14 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     this.chromaUrl = chromaUrl;
   }
 
+  public String getOpenAiApiKey() {
+    return openAiApiKey;
+  }
+
+  public void setOpenAiApiKey(String openAiApiKey) {
+    this.openAiApiKey = openAiApiKey;
+  }
+
   public enum SEmbeddingStore implements IEnumHasCodeAndDescription {
     IN_MEMORY("inmemory",
         BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingstore.inmemory")), NEO4J("neo4j",
@@ -590,7 +601,7 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   }
 
   public enum SEmbeddingModel implements IEnumHasCodeAndDescription {
-    ONNX_MODEL("onnx", BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingmodel.onnx"));
+    ONNX_MODEL("onnx", BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingmodel.onnx")), OPEN_AI("openai", BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingmodel.openai"));
 
     private final String code;
     private final String description;
