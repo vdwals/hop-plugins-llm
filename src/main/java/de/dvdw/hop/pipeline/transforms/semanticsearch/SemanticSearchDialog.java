@@ -30,7 +30,6 @@ import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.neo4j.shared.NeoConnection;
 import org.apache.hop.pipeline.PipelineMeta;
-import org.apache.hop.pipeline.transform.ITransformDialog;
 import org.apache.hop.pipeline.transform.TransformMeta;
 import org.apache.hop.pipeline.transform.stream.IStream;
 import org.apache.hop.ui.core.ConstUi;
@@ -63,14 +62,13 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import de.dvdw.hop.llm.LlmModel;
+import de.dvdw.hop.llm.LlmPluginDialog;
 import de.dvdw.hop.pipeline.transforms.semanticsearch.SemanticSearchMeta.SEmbeddingStore;
 
-public class SemanticSearchDialog extends BaseTransformDialog implements ITransformDialog {
+public class SemanticSearchDialog extends LlmPluginDialog {
   private static final Class<?> PKG = SemanticSearchMeta.class; // For Translator
 
   private CCombo wTransform;
-
-  private CCombo wModel;
 
   private CCombo wStore;
   private TextVar wChromaUrl;
@@ -87,12 +85,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
   private TextVar wMatchField;
   private TextVar wKeyField;
   private TextVar wMaxValue;
-
-  private TextVar wOnnxFilename;
-  private Button wbbOnnxFilename;
-
-  private TextVar wTokenizerFilename;
-  private Button wbbTokenizerFilename;
 
   private Button wGetLookup;
 
@@ -238,62 +230,12 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     // ////////////////////////
     // START OF Model TAB ///
     // ////////////////////////
-    tabItems =
-        generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Tab"));
-    Composite wModelComp = tabItems.getLeft();
-    CTabItem wModelTab = tabItems.getRight();
 
-    // /////////////////////////////////
-    // START OF Settings Fields GROUP
-    // /////////////////////////////////
+    renderModelTab(wTabFolder, middle, margin, wMainStreamGroup, lsMod);
 
-    Group wSettingsGroup = generateGroup(wModelComp,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
-
-    // Model
-    generateLabel(middle, margin, wMainStreamGroup, wSettingsGroup,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Label"));
-
-    wModel = new CCombo(wSettingsGroup, SWT.BORDER | SWT.READ_ONLY);
-    PropsUi.setLook(wModel);
-    FormData fdModel = new FormData();
-    fdModel.left = new FormAttachment(middle, 0);
-    fdModel.top = new FormAttachment(wMainStreamGroup, margin);
-    fdModel.right = new FormAttachment(100, -margin);
-    wModel.setLayoutData(fdModel);
-    wModel.setItems(LlmModel.getDescriptions());
-    wModel.addListener(SWT.Selection, e -> activeModel());
-
-    // Onnx-File
-    Pair<TextVar, Button> inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup, wModel,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.OnnxFilename.Label"),
-        new String[] {"*.onnx", "*"},
-        new String[] {BaseMessages.getString(PKG, "SemanticSearchDialog.FileType.Onnx"),
-            BaseMessages.getString(PKG, "System.FileType.AllFiles")});
-    wOnnxFilename = inputs.getLeft();
-    wbbOnnxFilename = inputs.getRight();
-
-    // Tokenizer-File
-    inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup, wOnnxFilename,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.TokenizerFilename.Label"),
-        new String[] {"*.json", "*"},
-        new String[] {BaseMessages.getString(PKG, "System.FileType.JsonFiles"),
-            BaseMessages.getString(PKG, "System.FileType.AllFiles")});
-    wbbTokenizerFilename = inputs.getRight();
-    wTokenizerFilename = inputs.getLeft();
-
-    this.wMaxValue = generateTextVar(middle, margin, wTokenizerFilename, wSettingsGroup,
+    this.wMaxValue = generateTextVar(middle, margin, wTokenizerFilename, getwSettingsGroup(),
         BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Label"),
         BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Tooltip"));
-
-    finalizeGroup(margin, wMainStreamGroup, wSettingsGroup);
-
-    // ///////////////////////////////////////////////////////////
-    // / END OF Settings GROUP
-    // ///////////////////////////////////////////////////////////
-
-    wModelComp.layout();
-    wModelTab.setControl(wModelComp);
 
     // ///////////////////////////////////////////////////////////
     // / END OF Model TAB
@@ -315,7 +257,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
 
     // Storage
-    wStore = generateCCombo(middle, margin, wSettingsGroup, wStoreGroup,
+    wStore = generateCCombo(middle, margin, getwSettingsGroup(), wStoreGroup,
         SemanticSearchMeta.SEmbeddingStore.getDescriptions(), e -> activeStore(),
         BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Label"));
 
@@ -340,7 +282,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
         BaseMessages.getString(PKG, "SemanticSearchDialog.chroma.Label"),
         BaseMessages.getString(PKG, "SemanticSearchDialog.chroma.Tooltip"));
     
-    finalizeGroup(margin, wSettingsGroup, wStoreGroup);
+    finalizeGroup(margin, getwSettingsGroup(), wStoreGroup);
 
     // ///////////////////////////////////////////////////////////
     // / END OF Settings GROUP
@@ -368,7 +310,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     Group wOutputFieldsGroup = generateGroup(wFieldsComp,
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.OutputFieldsGroup.Label"));
 
-    this.wMatchField = generateTextVar(middle, margin, wSettingsGroup, wOutputFieldsGroup,
+    this.wMatchField = generateTextVar(middle, margin, wStoreGroup, wOutputFieldsGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.MatchField.Label"), null);
 
     this.wKeyField = generateTextVar(middle, margin, wMatchField, wOutputFieldsGroup,
@@ -377,7 +319,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     this.wDistanceField = generateTextVar(middle, margin, wKeyField, wOutputFieldsGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.DistanceField.Label"), null);
 
-    finalizeGroup(margin, wSettingsGroup, wOutputFieldsGroup);
+    finalizeGroup(margin, wStoreGroup, wOutputFieldsGroup);
 
     // ///////////////////////////////////////////////////////////
     // / END OF OutputFields GROUP
@@ -558,48 +500,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     return new ImmutablePair<Composite, CTabItem>(wComp, wTab);
   }
 
-  private Pair<TextVar, Button> generateFileInput(ModifyListener lsMod, int middle, int margin,
-      Group formGroup, Control previousControl, String label, String[] extensionsForFileSelector,
-      String[] extensionDescirptions) {
-    //
-    // The filename browse button
-    //
-    Button fileButton = new Button(formGroup, SWT.PUSH | SWT.CENTER);
-    PropsUi.setLook(fileButton);
-    fileButton.setText(BaseMessages.getString(PKG, "System.Button.Browse"));
-    fileButton
-        .setToolTipText(BaseMessages.getString(PKG, "System.Tooltip.BrowseForFileOrDirAndAdd"));
-    FormData fdbFilename = new FormData();
-    fdbFilename.top = new FormAttachment(previousControl, margin);
-    fdbFilename.right = new FormAttachment(100, 0);
-    fileButton.setLayoutData(fdbFilename);
-
-    // The field itself...
-    //
-    Label wlFilename = new Label(formGroup, SWT.RIGHT);
-    wlFilename.setText(label);
-    PropsUi.setLook(wlFilename);
-    FormData fdlFilename = new FormData();
-    fdlFilename.top = new FormAttachment(previousControl, margin);
-    fdlFilename.left = new FormAttachment(0, 0);
-    fdlFilename.right = new FormAttachment(middle, -margin);
-    wlFilename.setLayoutData(fdlFilename);
-    TextVar fileName = new TextVar(variables, formGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-    PropsUi.setLook(fileName);
-    fileName.addModifyListener(lsMod);
-    FormData fdFilename = new FormData();
-    fdFilename.top = new FormAttachment(previousControl, margin);
-    fdFilename.left = new FormAttachment(middle, 0);
-    fdFilename.right = new FormAttachment(fileButton, -margin);
-    fileName.setLayoutData(fdFilename);
-
-    // Add Eventlistener
-    fileButton.addListener(SWT.Selection, e -> BaseDialog.presentFileDialog(shell, fileName,
-        variables, extensionsForFileSelector, extensionDescirptions, true));
-
-    return new ImmutablePair<TextVar, Button>(fileName, fileButton);
-  }
-
   /** Copy information from the meta-data input to the dialog fields. */
   public void getData() {
     if (isDebug()) {
@@ -645,11 +545,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     wTransformName.setFocus();
   }
 
-  private void cancel() {
-    transformName = null;
-    dispose();
-  }
-
   private void activeStore() {
     SEmbeddingStore store = SemanticSearchMeta.SEmbeddingStore.lookupDescription(wStore.getText());
 
@@ -668,7 +563,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     wTokenizerFilename.setEnabled(enable);
   }
 
-  private void ok() {
+  protected void ok() {
     if (Utils.isEmpty(wTransformName.getText())) {
       return;
     }
@@ -681,11 +576,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     input.setLookupTextField(wLookupTextField.getText());
     input.setLookupKeyField(wLookupKeyField.getText());
 
-    input.setLlmModel(LlmModel.lookupDescription(wModel.getText()));
     input.setEmbeddingStore(SEmbeddingStore.lookupDescription(wStore.getText()));
-    input.setOnnxFilename(wOnnxFilename.getText());
     input.setMaximalValue(wMaxValue.getText());
-    input.setTokenizerFilename(wTokenizerFilename.getText());
 
     input.setOutputMatchField(wMatchField.getText());
     input.setOutputKeyField(wKeyField.getText());
@@ -700,9 +592,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
       input.getLookupValues().add(lookupValue);
     }
 
-    transformName = wTransformName.getText(); // return value
-    input.setChanged();
-    dispose();
+    transformName = wTransformName.getText();
+    super.ok();
   }
 
   private void setMainStreamField() {
