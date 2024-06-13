@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.hop.pipeline.transforms.semanticsearch;
+package de.dvdw.hop.pipeline.transforms.semanticsearch;
 
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;

@@ -13,7 +13,7 @@
  * the License.
  */
 
-package org.apache.hop.pipeline.transforms.semanticsearch;
+package de.dvdw.hop.pipeline.transforms.semanticsearch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,12 +34,12 @@ import org.apache.hop.metadata.api.IEnumHasCode;
 import org.apache.hop.metadata.api.IEnumHasCodeAndDescription;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
-import org.apache.hop.pipeline.transform.BaseTransformMeta;
 import org.apache.hop.pipeline.transform.ITransformIOMeta;
 import org.apache.hop.pipeline.transform.TransformIOMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
 import org.apache.hop.pipeline.transform.stream.IStream;
 import org.apache.hop.pipeline.transform.stream.IStream.StreamType;
+import de.dvdw.hop.llm.LlmPluginMeta;
 import org.apache.hop.pipeline.transform.stream.Stream;
 import org.apache.hop.pipeline.transform.stream.StreamIcon;
 
@@ -47,25 +47,12 @@ import org.apache.hop.pipeline.transform.stream.StreamIcon;
     description = "i18n::SemanticSearch.Description",
     categoryDescription = "i18n:org.apache.hop.pipeline.transform:BaseTransform.Category.Lookup",
     keywords = "i18n::SemanticSearchMeta.keyword")
-public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, SemanticSearchData> {
+public class SemanticSearchMeta extends LlmPluginMeta<SemanticSearch, SemanticSearchData> {
   private static final Class<?> PKG = SemanticSearchMeta.class; // For Translator
 
   /** Embedding store type */
   @HopMetadataProperty(key = "embeddingstore", storeWithCode = true)
   private SEmbeddingStore embeddingStore;
-
-  /** Embedding model type */
-  @HopMetadataProperty(key = "embeddingmodel", storeWithCode = true)
-  private SEmbeddingModel embeddingModel;
-
-  @HopMetadataProperty(key = "onnxfilename")
-  private String onnxFilename;
-
-  @HopMetadataProperty(key = "tokenizerfilename")
-  private String tokenizerFilename;
-
-  @HopMetadataProperty(key = "openaiapikey")
-  private String openAiApiKey;
 
   @HopMetadataProperty(key = "from")
   private String lookupTransformName;
@@ -114,15 +101,14 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   public SemanticSearchMeta() {
     super();
     this.setEmbeddingStore(SEmbeddingStore.IN_MEMORY);
-    this.setEmbeddingModel(SEmbeddingModel.ONNX_MODEL);
     this.lookupValues = new ArrayList<>();
   }
 
   public SemanticSearchMeta(SemanticSearchMeta m) {
-    this();
+    super(m);
+    
     this.setNeo4JConnectionName(m.getNeo4JConnectionName());
     this.setEmbeddingStore(m.getEmbeddingStore());
-    this.setEmbeddingModel(m.getEmbeddingModel());
     this.lookupTextField = m.lookupTextField;
     this.setLookupKeyField(m.getLookupKeyField());
     this.mainStreamField = m.mainStreamField;
@@ -140,8 +126,9 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
 
   @Override
   public void setDefault() {
+    super.setDefault();
+    
     setEmbeddingStore(SEmbeddingStore.IN_MEMORY);
-    setEmbeddingModel(SEmbeddingModel.ONNX_MODEL);
     setNeo4JConnectionName(null);
     lookupTextField = null;
     setLookupKeyField(null);
@@ -361,14 +348,6 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     this.embeddingStore = embeddingStore;
   }
 
-  public SEmbeddingModel getEmbeddingModel() {
-    return embeddingModel;
-  }
-
-  public void setEmbeddingModel(SEmbeddingModel embeddingModel) {
-    this.embeddingModel = embeddingModel;
-  }
-
   /**
    * Returns the Input/Output metadata for this transform. The generator transform only produces
    * output, does not accept input!
@@ -471,22 +450,6 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     return lookupValues;
   }
 
-  public String getOnnxFilename() {
-    return onnxFilename;
-  }
-
-  public void setOnnxFilename(String filename) {
-    this.onnxFilename = filename;
-  }
-
-  public String getTokenizerFilename() {
-    return tokenizerFilename;
-  }
-
-  public void setTokenizerFilename(String tokenizerFilename) {
-    this.tokenizerFilename = tokenizerFilename;
-  }
-
   /**
    * Sets lookupValues
    *
@@ -544,14 +507,6 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     this.chromaUrl = chromaUrl;
   }
 
-  public String getOpenAiApiKey() {
-    return openAiApiKey;
-  }
-
-  public void setOpenAiApiKey(String openAiApiKey) {
-    this.openAiApiKey = openAiApiKey;
-  }
-
   public enum SEmbeddingStore implements IEnumHasCodeAndDescription {
     IN_MEMORY("inmemory",
         BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingstore.inmemory")), NEO4J("neo4j",
@@ -577,51 +532,6 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
 
     public static SEmbeddingStore lookupCode(String code) {
       return IEnumHasCode.lookupCode(SEmbeddingStore.class, code, IN_MEMORY);
-    }
-
-    /**
-     * Gets code
-     *
-     * @return value of code
-     */
-    @Override
-    public String getCode() {
-      return code;
-    }
-
-    /**
-     * Gets description
-     *
-     * @return value of description
-     */
-    @Override
-    public String getDescription() {
-      return description;
-    }
-  }
-
-  public enum SEmbeddingModel implements IEnumHasCodeAndDescription {
-    ONNX_MODEL("onnx", BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingmodel.onnx")), OPEN_AI("openai", BaseMessages.getString(PKG, "SemanticSearchMeta.embeddingmodel.openai"));
-
-    private final String code;
-    private final String description;
-
-    SEmbeddingModel(String code, String description) {
-      this.code = code;
-      this.description = description;
-    }
-
-    public static String[] getDescriptions() {
-      return IEnumHasCodeAndDescription.getDescriptions(SEmbeddingModel.class);
-    }
-
-    public static SEmbeddingModel lookupDescription(String description) {
-      return IEnumHasCodeAndDescription.lookupDescription(SEmbeddingModel.class, description,
-          ONNX_MODEL);
-    }
-
-    public static SEmbeddingModel lookupCode(String code) {
-      return IEnumHasCode.lookupCode(SEmbeddingModel.class, code, ONNX_MODEL);
     }
 
     /**

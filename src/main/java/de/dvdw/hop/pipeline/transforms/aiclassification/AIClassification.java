@@ -13,7 +13,7 @@
  * the License.
  */
 
-package org.apache.hop.pipeline.transforms.semanticsearch;
+package de.dvdw.hop.pipeline.transforms.aiclassification;
 
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
@@ -43,18 +43,18 @@ import org.apache.hop.pipeline.Pipeline;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransform;
 import org.apache.hop.pipeline.transform.TransformMeta;
-import org.apache.hop.pipeline.transforms.semanticsearch.SemanticSearchMeta.SLookupValue;
 import ai.djl.util.ClassLoaderUtils;
+import de.dvdw.hop.pipeline.transforms.semanticsearch.SemanticSearchMeta.SLookupValue;
 
 /**
  * Performs a fuzzy match for each main stream field row An approximative match is done in a lookup
  * stream
  */
-public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSearchData> {
-  private static final Class<?> PKG = SemanticSearchMeta.class; // For Translator
+public class AIClassification extends BaseTransform<AIClassificationMeta, AIClassificationData> {
+  private static final Class<?> PKG = AIClassificationMeta.class; // For Translator
 
-  public SemanticSearch(TransformMeta transformMeta, SemanticSearchMeta meta,
-      SemanticSearchData data, int copyNr, PipelineMeta pipelineMeta, Pipeline pipeline) {
+  public AIClassification(TransformMeta transformMeta, AIClassificationMeta meta,
+      AIClassificationData data, int copyNr, PipelineMeta pipelineMeta, Pipeline pipeline) {
     super(transformMeta, meta, data, copyNr, pipelineMeta, pipeline);
   }
 
