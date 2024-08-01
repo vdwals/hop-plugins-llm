@@ -18,16 +18,12 @@ package de.dvdw.hop.llm;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hop.core.Const;
-import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.pipeline.PipelineMeta;
-import org.apache.hop.pipeline.transform.ITransformDialog;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.dialog.BaseDialog;
 import org.apache.hop.ui.core.gui.GuiResource;
 import org.apache.hop.ui.core.widget.TextVar;
-import org.apache.hop.ui.pipeline.transform.BaseTransformDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.CTabFolder;
@@ -43,8 +39,8 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 
-public abstract class LlmPluginDialog extends BaseTransformDialog implements ITransformDialog {
-  private static final Class<?> PKG = LlmPluginDialog.class; // For Translator
+public class LlmPluginDialogModule {
+  private static final Class<?> PKG = LlmPluginDialogModule.class; // For Translator
 
   protected CCombo wModel;
 
@@ -59,12 +55,44 @@ public abstract class LlmPluginDialog extends BaseTransformDialog implements ITr
   private Group wSettingsGroup;
   private CTabItem wModelTab;
 
-  protected final LlmPluginMeta<?, ?> input;
+  private LlmPluginMeta<?, ?> input;
+  private Shell parent;
+  private IVariables variables;
 
-  public LlmPluginDialog(Shell parent, IVariables variables, Object in, PipelineMeta pipelineMeta,
-      String sname) {
-    super(parent, variables, (LlmPluginMeta<?, ?>) in, pipelineMeta, sname);
-    input = (LlmPluginMeta<?, ?>) in;
+  public LlmPluginDialogModule(Shell parent, IVariables variables, LlmPluginMeta<?, ?> input) {
+    this.input = input;
+    this.parent = parent;
+    this.variables = variables;
+  }
+
+  public void activeModel() {
+    LlmModel model = LlmModel.lookupDescription(wModel.getText());
+
+    wbbOnnxFilename.setVisible(model == LlmModel.ONNX_MODEL);
+    wOnnxFilename.setVisible(model == LlmModel.ONNX_MODEL);
+    wbbTokenizerFilename.setVisible(model == LlmModel.ONNX_MODEL);
+    wTokenizerFilename.setVisible(model == LlmModel.ONNX_MODEL);
+
+    wOpenAiKey.setVisible(model == LlmModel.OPEN_AI);
+  }
+
+  public TextVar generateTextVar(int middle, int margin, Control wPreviousControl, Group wGroup,
+      String label, String tooltip) {
+
+    generateLabel(middle, margin, wPreviousControl, wGroup, label);
+
+    TextVar wTextField = new TextVar(variables, wGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+    PropsUi.setLook(wTextField);
+
+    if (tooltip != null)
+      wTextField.setToolTipText(tooltip);
+
+    FormData fdMatchField = new FormData();
+    fdMatchField.left = new FormAttachment(middle, 0);
+    fdMatchField.top = new FormAttachment(wPreviousControl, margin);
+    fdMatchField.right = new FormAttachment(100, 0);
+    wTextField.setLayoutData(fdMatchField);
+    return wTextField;
   }
 
   public void renderModelTab(CTabFolder wTabFolder, int middle, int margin,
@@ -74,7 +102,7 @@ public abstract class LlmPluginDialog extends BaseTransformDialog implements ITr
     // START OF Model TAB ///
     // ////////////////////////
     Pair<Composite, CTabItem> tabItems =
-        generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Tab"));
+        generateTab(wTabFolder, BaseMessages.getString(PKG, "LlmPluginDialog.Model.Tab"));
     Composite wModelComp = tabItems.getLeft();
     wModelTab = tabItems.getRight();
 
@@ -83,39 +111,43 @@ public abstract class LlmPluginDialog extends BaseTransformDialog implements ITr
     // /////////////////////////////////
 
     wSettingsGroup = generateGroup(wModelComp,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
+        BaseMessages.getString(PKG, "LlmPluginDialog.Group.SettingsGroup.Label"));
 
     // Model
     generateLabel(middle, margin, wPreviousControl, wSettingsGroup,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Label"));
+        BaseMessages.getString(PKG, "LlmPluginDialog.Model.Label"));
 
     wModel = new CCombo(wSettingsGroup, SWT.BORDER | SWT.READ_ONLY);
-    PropsUi.setLook(wModel);
+    PropsUi.setLook(getwModel());
     FormData fdModel = new FormData();
     fdModel.left = new FormAttachment(middle, 0);
     fdModel.top = new FormAttachment(wPreviousControl, margin);
     fdModel.right = new FormAttachment(100, -margin);
-    wModel.setLayoutData(fdModel);
-    wModel.setItems(LlmModel.getDescriptions());
-    wModel.addListener(SWT.Selection, e -> activeModel());
+    getwModel().setLayoutData(fdModel);
+    getwModel().setItems(LlmModel.getDescriptions());
+    getwModel().addListener(SWT.Selection, e -> activeModel());
 
     // Onnx-File
-    Pair<TextVar, Button> inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup, wModel,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.OnnxFilename.Label"),
+    Pair<TextVar, Button> inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup,
+        getwModel(), BaseMessages.getString(PKG, "LlmPluginDialog.OnnxFilename.Label"),
         new String[] {"*.onnx", "*"},
-        new String[] {BaseMessages.getString(PKG, "SemanticSearchDialog.FileType.Onnx"),
+        new String[] {BaseMessages.getString(PKG, "LlmPluginDialog.FileType.Onnx"),
             BaseMessages.getString(PKG, "System.FileType.AllFiles")});
     wOnnxFilename = inputs.getLeft();
     wbbOnnxFilename = inputs.getRight();
 
     // Tokenizer-File
-    inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup, wOnnxFilename,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.TokenizerFilename.Label"),
+    inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup, getwOnnxFilename(),
+        BaseMessages.getString(PKG, "LlmPluginDialog.TokenizerFilename.Label"),
         new String[] {"*.json", "*"},
         new String[] {BaseMessages.getString(PKG, "System.FileType.JsonFiles"),
             BaseMessages.getString(PKG, "System.FileType.AllFiles")});
     wbbTokenizerFilename = inputs.getRight();
     wTokenizerFilename = inputs.getLeft();
+
+
+    this.wOpenAiKey = generateTextVar(middle, margin, wTokenizerFilename, wSettingsGroup,
+        BaseMessages.getString(PKG, "LlmPluginDialog.openaikey.Label"), null);
 
     finalizeGroup(margin, wPreviousControl, wSettingsGroup);
 
@@ -223,7 +255,7 @@ public abstract class LlmPluginDialog extends BaseTransformDialog implements ITr
     fileName.setLayoutData(fdFilename);
 
     // Add Eventlistener
-    fileButton.addListener(SWT.Selection, e -> BaseDialog.presentFileDialog(shell, fileName,
+    fileButton.addListener(SWT.Selection, e -> BaseDialog.presentFileDialog(parent, fileName,
         variables, extensionsForFileSelector, extensionDescirptions, true));
 
     return new ImmutablePair<TextVar, Button>(fileName, fileButton);
@@ -231,45 +263,20 @@ public abstract class LlmPluginDialog extends BaseTransformDialog implements ITr
 
   /** Copy information from the meta-data input to the dialog fields. */
   public void getData() {
-    if (isDebug()) {
-      logDebug(BaseMessages.getString(PKG, "SemanticSearchDialog.Log.GettingKeyInfo"));
-    }
-
-    wModel.setText(
+    getwModel().setText(
         Const.NVL(input.getLlmModel().getDescription(), LlmModel.ONNX_MODEL.getDescription()));
     activeModel();
 
-    wOnnxFilename.setText(Const.NVL(input.getOnnxFilename(), ""));
-    wTokenizerFilename.setText(Const.NVL(input.getTokenizerFilename(), ""));
+    getwOnnxFilename().setText(Const.NVL(input.getOnnxFilename(), ""));
+    getwTokenizerFilename().setText(Const.NVL(input.getTokenizerFilename(), ""));
   }
 
-  protected void cancel() {
-    transformName = null;
-    dispose();
-  }
-
-  private void activeModel() {
-    LlmModel model = LlmModel.lookupDescription(wModel.getText());
-
-    boolean enable = (model == LlmModel.ONNX_MODEL);
-
-    wbbOnnxFilename.setEnabled(enable);
-    wOnnxFilename.setEnabled(enable);
-    wbbTokenizerFilename.setEnabled(enable);
-    wTokenizerFilename.setEnabled(enable);
-  }
-
-  protected void ok() {
-    if (Utils.isEmpty(wTransformName.getText())) {
-      return;
-    }
-
-    input.setLlmModel(LlmModel.lookupDescription(wModel.getText()));
-    input.setOnnxFilename(wOnnxFilename.getText());
-    input.setTokenizerFilename(wTokenizerFilename.getText());
+  public void ok() {
+    input.setLlmModel(LlmModel.lookupDescription(getwModel().getText()));
+    input.setOnnxFilename(getwOnnxFilename().getText());
+    input.setTokenizerFilename(getwTokenizerFilename().getText());
 
     input.setChanged();
-    dispose();
   }
 
   public Group getwSettingsGroup() {
@@ -278,5 +285,17 @@ public abstract class LlmPluginDialog extends BaseTransformDialog implements ITr
 
   public CTabItem getwModelTab() {
     return wModelTab;
+  }
+
+  public TextVar getwTokenizerFilename() {
+    return wTokenizerFilename;
+  }
+
+  public CCombo getwModel() {
+    return wModel;
+  }
+
+  public TextVar getwOnnxFilename() {
+    return wOnnxFilename;
   }
 }

@@ -30,6 +30,7 @@ import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.neo4j.shared.NeoConnection;
 import org.apache.hop.pipeline.PipelineMeta;
+import org.apache.hop.pipeline.transform.ITransformDialog;
 import org.apache.hop.pipeline.transform.TransformMeta;
 import org.apache.hop.pipeline.transform.stream.IStream;
 import org.apache.hop.ui.core.ConstUi;
@@ -62,10 +63,10 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import de.dvdw.hop.llm.LlmModel;
-import de.dvdw.hop.llm.LlmPluginDialog;
+import de.dvdw.hop.llm.LlmPluginDialogModule;
 import de.dvdw.hop.pipeline.transforms.semanticsearch.SemanticSearchMeta.SEmbeddingStore;
 
-public class SemanticSearchDialog extends LlmPluginDialog {
+public class SemanticSearchDialog extends BaseTransformDialog implements ITransformDialog {
   private static final Class<?> PKG = SemanticSearchMeta.class; // For Translator
 
   private CCombo wTransform;
@@ -97,10 +98,13 @@ public class SemanticSearchDialog extends LlmPluginDialog {
 
   private TextVar wDistanceField;
 
+  private LlmPluginDialogModule llmModule;
+
   public SemanticSearchDialog(Shell parent, IVariables variables, Object in,
       PipelineMeta pipelineMeta, String sname) {
     super(parent, variables, (SemanticSearchMeta) in, pipelineMeta, sname);
     input = (SemanticSearchMeta) in;
+    llmModule = new LlmPluginDialogModule(parent, variables, input);
   }
 
   @Override
@@ -231,9 +235,10 @@ public class SemanticSearchDialog extends LlmPluginDialog {
     // START OF Model TAB ///
     // ////////////////////////
 
-    renderModelTab(wTabFolder, middle, margin, wMainStreamGroup, lsMod);
+    llmModule.renderModelTab(wTabFolder, middle, margin, wMainStreamGroup, lsMod);
 
-    this.wMaxValue = generateTextVar(middle, margin, wTokenizerFilename, getwSettingsGroup(),
+    this.wMaxValue = llmModule.generateTextVar(middle, margin, llmModule.getwTokenizerFilename(),
+        llmModule.getwSettingsGroup(),
         BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Label"),
         BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Tooltip"));
 
@@ -257,7 +262,7 @@ public class SemanticSearchDialog extends LlmPluginDialog {
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
 
     // Storage
-    wStore = generateCCombo(middle, margin, getwSettingsGroup(), wStoreGroup,
+    wStore = generateCCombo(middle, margin, llmModule.getwSettingsGroup(), wStoreGroup,
         SemanticSearchMeta.SEmbeddingStore.getDescriptions(), e -> activeStore(),
         BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Label"));
 
@@ -278,11 +283,11 @@ public class SemanticSearchDialog extends LlmPluginDialog {
       new ErrorDialog(shell, "Error", "Error getting list of connections", e);
     }
 
-    this.wChromaUrl = generateTextVar(middle, margin, wNeo4JConnection, wStoreGroup,
+    this.wChromaUrl = llmModule.generateTextVar(middle, margin, wNeo4JConnection, wStoreGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.chroma.Label"),
         BaseMessages.getString(PKG, "SemanticSearchDialog.chroma.Tooltip"));
-    
-    finalizeGroup(margin, getwSettingsGroup(), wStoreGroup);
+
+    finalizeGroup(margin, llmModule.getwSettingsGroup(), wStoreGroup);
 
     // ///////////////////////////////////////////////////////////
     // / END OF Settings GROUP
@@ -310,13 +315,13 @@ public class SemanticSearchDialog extends LlmPluginDialog {
     Group wOutputFieldsGroup = generateGroup(wFieldsComp,
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.OutputFieldsGroup.Label"));
 
-    this.wMatchField = generateTextVar(middle, margin, wStoreGroup, wOutputFieldsGroup,
+    this.wMatchField = llmModule.generateTextVar(middle, margin, wStoreGroup, wOutputFieldsGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.MatchField.Label"), null);
 
-    this.wKeyField = generateTextVar(middle, margin, wMatchField, wOutputFieldsGroup,
+    this.wKeyField = llmModule.generateTextVar(middle, margin, wMatchField, wOutputFieldsGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.KeyField.Label"), null);
 
-    this.wDistanceField = generateTextVar(middle, margin, wKeyField, wOutputFieldsGroup,
+    this.wDistanceField = llmModule.generateTextVar(middle, margin, wKeyField, wOutputFieldsGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.DistanceField.Label"), null);
 
     finalizeGroup(margin, wStoreGroup, wOutputFieldsGroup);
@@ -388,31 +393,17 @@ public class SemanticSearchDialog extends LlmPluginDialog {
     return transformName;
   }
 
-  private TextVar generateTextVar(int middle, int margin, Control wPreviousControl, Group wGroup,
-      String label, String tooltip) {
-
-    generateLabel(middle, margin, wPreviousControl, wGroup, label);
-
-    TextVar wTextField = new TextVar(variables, wGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-    PropsUi.setLook(wTextField);
-
-    if (tooltip != null)
-      wTextField.setToolTipText(tooltip);
-
-    FormData fdMatchField = new FormData();
-    fdMatchField.left = new FormAttachment(middle, 0);
-    fdMatchField.top = new FormAttachment(wPreviousControl, margin);
-    fdMatchField.right = new FormAttachment(100, 0);
-    wTextField.setLayoutData(fdMatchField);
-    return wTextField;
-  }
-
   private void finalizeGroup(int margin, Control cPreviousControl, Group wGroup) {
     FormData fdSettingsGroup = new FormData();
     fdSettingsGroup.left = new FormAttachment(0, margin);
     fdSettingsGroup.top = new FormAttachment(cPreviousControl, margin);
     fdSettingsGroup.right = new FormAttachment(100, -margin);
     wGroup.setLayoutData(fdSettingsGroup);
+  }
+
+  private void cancel() {
+    transformName = null;
+    dispose();
   }
 
   private ComboVar generateCombVar(int middle, int margin, Control wPreviousControl,
@@ -513,18 +504,18 @@ public class SemanticSearchDialog extends LlmPluginDialog {
     wKeyField.setText(Const.NVL(input.getOutputKeyField(), ""));
     wMaxValue.setText(Const.NVL(input.getMaximalValue(), ""));
     wDistanceField.setText(Const.NVL(input.getOutputDistanceField(), ""));
-    
-    wModel.setText(Const.NVL(input.getLlmModel().getDescription(),
-        LlmModel.ONNX_MODEL.getDescription()));
-    activeModel();
 
-    wOnnxFilename.setText(Const.NVL(input.getOnnxFilename(), ""));
-    wTokenizerFilename.setText(Const.NVL(input.getTokenizerFilename(), ""));
-    
+    llmModule.getwModel().setText(
+        Const.NVL(input.getLlmModel().getDescription(), LlmModel.ONNX_MODEL.getDescription()));
+    llmModule.activeModel();
+
+    llmModule.getwOnnxFilename().setText(Const.NVL(input.getOnnxFilename(), ""));
+    llmModule.getwTokenizerFilename().setText(Const.NVL(input.getTokenizerFilename(), ""));
+
     wStore.setText(Const.NVL(input.getEmbeddingStore().getDescription(),
         SEmbeddingStore.IN_MEMORY.getDescription()));
     activeStore();
-    
+
     wNeo4JConnection.setText(Const.NVL(input.getNeo4JConnectionName(), ""));
     wChromaUrl.setText(Const.NVL(input.getChromaUrl(), ""));
     wMaxValue.setText(Const.NVL(input.getMaximalValue(), "1"));
@@ -552,17 +543,6 @@ public class SemanticSearchDialog extends LlmPluginDialog {
     wChromaUrl.setVisible(store == SEmbeddingStore.CHROMA);
   }
 
-  private void activeModel() {
-    LlmModel model = LlmModel.lookupDescription(wModel.getText());
-
-    boolean enable = (model == LlmModel.ONNX_MODEL);
-
-    wbbOnnxFilename.setEnabled(enable);
-    wOnnxFilename.setEnabled(enable);
-    wbbTokenizerFilename.setEnabled(enable);
-    wTokenizerFilename.setEnabled(enable);
-  }
-
   protected void ok() {
     if (Utils.isEmpty(wTransformName.getText())) {
       return;
@@ -570,7 +550,7 @@ public class SemanticSearchDialog extends LlmPluginDialog {
 
     input.setNeo4JConnectionName(wNeo4JConnection.getText());
     input.setChromaUrl(wChromaUrl.getText());
-    
+
     input.setMainStreamField(wMainStreamField.getText());
     input.setLookupTransformName(wTransform.getText());
     input.setLookupTextField(wLookupTextField.getText());
@@ -592,8 +572,11 @@ public class SemanticSearchDialog extends LlmPluginDialog {
       input.getLookupValues().add(lookupValue);
     }
 
+    llmModule.ok();
+
     transformName = wTransformName.getText();
-    super.ok();
+    input.setChanged();
+    dispose();
   }
 
   private void setMainStreamField() {
