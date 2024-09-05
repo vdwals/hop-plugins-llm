@@ -17,8 +17,8 @@ package org.apache.hop.pipeline.transforms.semanticsearch;
 
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.embedding.OnnxEmbeddingModel;
-import dev.langchain4j.model.embedding.PoolingMode;
+import dev.langchain4j.model.embedding.onnx.OnnxEmbeddingModel;
+import dev.langchain4j.model.embedding.onnx.PoolingMode;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
