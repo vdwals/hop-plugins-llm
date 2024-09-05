@@ -23,10 +23,9 @@ import dev.langchain4j.store.embedding.EmbeddingStore;
 import java.util.HashMap;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.pipeline.transform.BaseTransformData;
-import org.apache.hop.pipeline.transform.ITransformData;
 import org.apache.hop.pipeline.transform.stream.IStream;
 
-public class SemanticSearchData extends BaseTransformData implements ITransformData {
+public class SemanticSearchData extends BaseTransformData {
   public IRowMeta previousRowMeta;
   public IRowMeta outputRowMeta;
 

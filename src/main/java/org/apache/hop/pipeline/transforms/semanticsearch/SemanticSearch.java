@@ -21,6 +21,8 @@ import dev.langchain4j.model.embedding.onnx.OnnxEmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.PoolingMode;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.store.embedding.neo4j.Neo4jEmbeddingStore;
@@ -47,7 +49,8 @@ import org.apache.hop.pipeline.transforms.semanticsearch.SemanticSearchMeta.SLoo
 import ai.djl.util.ClassLoaderUtils;
 
 /**
- * Performs a fuzzy match for each main stream field row An approximative match is done in a lookup
+ * Performs a fuzzy match for each main stream field row An approximative match
+ * is done in a lookup
  * stream
  */
 public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSearchData> {
@@ -148,17 +151,14 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       // Store keyfield
       String keyValue = storeFieldValue(rowSet, rowData, indexOfLookupKeyField);
 
-
       Object[] storeData = new Object[data.indexOfCachedFields.length];
       storeData[0] = textValue;
 
       // Add additional fields?
       for (int i = 1; i < data.indexOfCachedFields.length; i++) {
-        IValueMeta fromStreamRowMeta =
-            rowSet.getRowMeta().getValueMeta(data.indexOfCachedFields[i]);
+        IValueMeta fromStreamRowMeta = rowSet.getRowMeta().getValueMeta(data.indexOfCachedFields[i]);
         if (fromStreamRowMeta.isStorageBinaryString()) {
-          storeData[i] =
-              fromStreamRowMeta.convertToNormalStorageType(rowData[data.indexOfCachedFields[i]]);
+          storeData[i] = fromStreamRowMeta.convertToNormalStorageType(rowData[data.indexOfCachedFields[i]]);
         } else {
           storeData[i] = rowData[data.indexOfCachedFields[i]];
         }
@@ -194,7 +194,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       first = false;
 
       data.outputRowMeta = getInputRowMeta().clone();
-      meta.getFields(data.outputRowMeta, getTransformName(), new IRowMeta[] {data.infoMeta}, null,
+      meta.getFields(data.outputRowMeta, getTransformName(), new IRowMeta[] { data.infoMeta }, null,
           this, metadataProvider);
 
       // Check lookup field
@@ -243,12 +243,12 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     String lookupValueString = getInputRowMeta().getString(keyRow, data.indexOfMainField);
 
     Embedding queryEmbedding = data.embeddingModel.embed(lookupValueString).content();
-    List<EmbeddingMatch<TextSegment>> relevant =
-        data.embeddingStore.findRelevant(queryEmbedding, data.maxResults);
+    EmbeddingSearchRequest esr = new EmbeddingSearchRequest(queryEmbedding, data.maxResults, null, null);
+    EmbeddingSearchResult<TextSegment> relevant = data.embeddingStore.search(esr);
 
     List<Object[]> retList = new ArrayList<Object[]>(data.maxResults);
 
-    for (EmbeddingMatch<TextSegment> embeddingMatch : relevant) {
+    for (EmbeddingMatch<TextSegment> embeddingMatch : relevant.matches()) {
       String key = embeddingMatch.embeddingId();
       Double score = embeddingMatch.score();
 
@@ -278,7 +278,6 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
 
       retList.add(retval);
     }
-
 
     return retList;
   }
@@ -401,7 +400,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
 
         setEmbeddingModel(onnxFile, tokenizerFile);
         break;
-        
+
       case OPEN_AI:
         if (Utils.isEmpty(meta.getOpenAiApiKey())) {
           logError(BaseMessages.getString(PKG, "SemanticSearch.Error.APIKeyMissing"));
@@ -435,9 +434,8 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
           return false;
         }
         try {
-          data.embeddingStore =
-              Neo4jEmbeddingStore.builder().driver(neoConnection.getDriver(log, this))
-                  .dimension(1536).databaseName(neoConnection.getDatabaseName()).build();
+          data.embeddingStore = Neo4jEmbeddingStore.builder().driver(neoConnection.getDriver(log, this))
+              .dimension(1536).databaseName(neoConnection.getDatabaseName()).build();
         } catch (HopConfigException e) {
           log.logError("Unable to get or create Neo4j database driver for database '"
               + neoConnection.getName() + "'", e);
@@ -458,8 +456,10 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
 
   private void setEmbeddingModel(String onnxFile, String tokenizerFile) {
     /*
-     * The current Threads classloader from hop execution thread is not aware of dependencies from
-     * the plugin, the the classloader needs to be adjusted to dynamically load the models
+     * The current Threads classloader from hop execution thread is not aware of
+     * dependencies from
+     * the plugin, the the classloader needs to be adjusted to dynamically load the
+     * models
      * dependencies.
      */
     ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
