@@ -45,6 +45,9 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
 
     public ModelMetaEditor(HopGui hopGui, MetadataManager<ModelMeta> manager, ModelMeta metadata) {
         super(hopGui, manager, metadata);
+
+        middle = PropsUi.getInstance().getMiddlePct();
+        margin = PropsUi.getMargin();
     }
 
     @Override
@@ -82,6 +85,7 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         FormData fdName = new FormData();
         fdName.top = new FormAttachment(wlName, margin);
         fdName.left = new FormAttachment(0, 0);
+        fdName.right = new FormAttachment(100, 0);
         wName.setLayoutData(fdName);
 
         wName.addListener(SWT.Modify, modifyListener);
@@ -93,7 +97,7 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         fdSpacer.right = new FormAttachment(100, 0);
         spacer.setLayoutData(fdSpacer);
 
-        return spacer;
+        return wName;
     }
 
     private Control buildModelSelection(Composite parent, Control previous) {
@@ -112,7 +116,7 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         wModelType.setItems(new String[] { "OnnxModel" });
         PropsUi.setLook(wModelType);
         FormData fdConnectionType = new FormData();
-        fdConnectionType.top = new FormAttachment(wlModelType, 0, SWT.CENTER);
+        fdConnectionType.top = new FormAttachment(previous, 0, SWT.CENTER);
         fdConnectionType.left = new FormAttachment(middle, 0); // To the right of the label
         wModelType.setLayoutData(fdConnectionType);
         Control lastControl = wModelType;

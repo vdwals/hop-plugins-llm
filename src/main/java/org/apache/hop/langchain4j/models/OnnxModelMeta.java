@@ -10,11 +10,11 @@ import org.apache.hop.metadata.api.HopMetadataProperty;
 public class OnnxModelMeta implements Cloneable, IModel {
     private static final Class<?> PKG = OnnxModelMeta.class;
 
-    @GuiWidgetElement(id = "modelPath", order = "10", parentId = ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID, type = GuiElementType.FILENAME, label = "i18n::Onnx.label.ModelPath")
+    @GuiWidgetElement(id = "modelPath", order = "10", parentId = ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID, type = GuiElementType.FILENAME, label = "i18n::Onnx.label.ModelPath", typeFilename = OnnxFileTypeFilename.class)
     @HopMetadataProperty(key = "modelPath")
     private String modelPath;
 
-    @GuiWidgetElement(id = "tokenizerPath", order = "20", parentId = ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID, type = GuiElementType.FILENAME, label = "i18n::Onnx.label.TokenizerPath")
+    @GuiWidgetElement(id = "tokenizerPath", order = "20", parentId = ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID, type = GuiElementType.FILENAME, label = "i18n::Onnx.label.TokenizerPath", typeFilename = TokenizerFileTypeFilename.class)
     @HopMetadataProperty(key = "tokenizerPath")
     private String tokenizerPath;
 
