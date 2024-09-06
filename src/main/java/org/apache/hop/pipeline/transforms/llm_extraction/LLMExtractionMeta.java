@@ -13,7 +13,7 @@
  * the License.
  */
 
-package org.apache.hop.pipeline.transforms.semanticsearch;
+package org.apache.hop.pipeline.transforms.llm_extraction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,8 +47,8 @@ import org.apache.hop.pipeline.transform.stream.StreamIcon;
     description = "i18n::SemanticSearch.Description",
     categoryDescription = "i18n:org.apache.hop.pipeline.transform:BaseTransform.Category.Lookup",
     keywords = "i18n::SemanticSearchMeta.keyword")
-public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, SemanticSearchData> {
-  private static final Class<?> PKG = SemanticSearchMeta.class; // For Translator
+public class LLMExtractionMeta extends BaseTransformMeta<LLMExtraction, LLMExtractionData> {
+  private static final Class<?> PKG = LLMExtractionMeta.class; // For Translator
 
   /** Embedding store type */
   @HopMetadataProperty(key = "embeddingstore", storeWithCode = true)
@@ -111,14 +111,14 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   @HopMetadataProperty(key = "chromaurl")
   private String chromaUrl;
 
-  public SemanticSearchMeta() {
+  public LLMExtractionMeta() {
     super();
     this.setEmbeddingStore(EmbeddingStore.IN_MEMORY);
     this.setEmbeddingModel(EmbeddingModel.ONNX_MODEL);
     this.lookupValues = new ArrayList<>();
   }
 
-  public SemanticSearchMeta(SemanticSearchMeta m) {
+  public LLMExtractionMeta(LLMExtractionMeta m) {
     this();
     this.setNeo4JConnectionName(m.getNeo4JConnectionName());
     this.setEmbeddingStore(m.getEmbeddingStore());
@@ -134,8 +134,8 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   }
 
   @Override
-  public SemanticSearchMeta clone() {
-    return new SemanticSearchMeta(this);
+  public LLMExtractionMeta clone() {
+    return new LLMExtractionMeta(this);
   }
 
   @Override

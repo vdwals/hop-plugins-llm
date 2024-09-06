@@ -13,7 +13,7 @@
  * the License.
  */
 
-package org.apache.hop.pipeline.transforms.semanticsearch;
+package org.apache.hop.pipeline.transforms.llm_extraction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,8 +65,8 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 
-public class SemanticSearchDialog extends BaseTransformDialog implements ITransformDialog {
-  private static final Class<?> PKG = SemanticSearchMeta.class; // For Translator
+public class LLMExtractionDialog extends BaseTransformDialog implements ITransformDialog {
+  private static final Class<?> PKG = LLMExtractionMeta.class; // For Translator
 
   private CCombo wTransform;
 
@@ -98,17 +98,17 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
 
   private MetaSelectionLine<NeoConnection> wNeo4JConnection;
 
-  private final SemanticSearchMeta input;
+  private final LLMExtractionMeta input;
   private boolean gotPreviousFields = false;
   private boolean gotLookupTextFields = false;
   private boolean gotLookupKeyFields = false;
 
   private TextVar wDistanceField;
 
-  public SemanticSearchDialog(Shell parent, IVariables variables, Object in,
+  public LLMExtractionDialog(Shell parent, IVariables variables, Object in,
       PipelineMeta pipelineMeta, String sname) {
-    super(parent, variables, (SemanticSearchMeta) in, pipelineMeta, sname);
-    input = (SemanticSearchMeta) in;
+    super(parent, variables, (LLMExtractionMeta) in, pipelineMeta, sname);
+    input = (LLMExtractionMeta) in;
   }
 
   @Override
@@ -157,8 +157,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     // ////////////////////////
     // START OF General TAB ///
     // ////////////////////////
-    Pair<Composite, CTabItem> tabItems = generateTab(wTabFolder,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.General.Tab"));
+    Pair<Composite, CTabItem> tabItems =
+        generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.General.Tab"));
     Composite wGeneralComp = tabItems.getLeft();
     CTabItem wGeneralTab = tabItems.getRight();
 
@@ -169,8 +169,9 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
 
     // Source transform line...
-    List<String> collect = pipelineMeta.findPreviousTransforms(pipelineMeta.findTransform(transformName), true)
-        .stream().map(TransformMeta::getName).collect(Collectors.toList());
+    List<String> collect =
+        pipelineMeta.findPreviousTransforms(pipelineMeta.findTransform(transformName), true)
+            .stream().map(TransformMeta::getName).collect(Collectors.toList());
     String[] transformNames = (String[]) collect.toArray(new String[collect.size()]);
 
     wTransform = generateCCombo(middle, margin, wTransformName, wLookupGroup, transformNames,
@@ -232,12 +233,13 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     wCancel = new Button(shell, SWT.PUSH);
     wCancel.setText(BaseMessages.getString(PKG, "System.Button.Cancel"));
     wCancel.addListener(SWT.Selection, e -> cancel());
-    setButtonPositions(new Button[] { wOk, wCancel }, margin, null);
+    setButtonPositions(new Button[] {wOk, wCancel}, margin, null);
 
     // ////////////////////////
     // START OF Model TAB ///
     // ////////////////////////
-    tabItems = generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Tab"));
+    tabItems =
+        generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Tab"));
     Composite wModelComp = tabItems.getLeft();
     CTabItem wModelTab = tabItems.getRight();
 
@@ -265,18 +267,18 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     // Onnx-File
     Pair<TextVar, Button> inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup, wModel,
         BaseMessages.getString(PKG, "SemanticSearchDialog.OnnxFilename.Label"),
-        new String[] { "*.onnx", "*" },
-        new String[] { BaseMessages.getString(PKG, "SemanticSearchDialog.FileType.Onnx"),
-            BaseMessages.getString(PKG, "System.FileType.AllFiles") });
+        new String[] {"*.onnx", "*"},
+        new String[] {BaseMessages.getString(PKG, "SemanticSearchDialog.FileType.Onnx"),
+            BaseMessages.getString(PKG, "System.FileType.AllFiles")});
     wOnnxFilename = inputs.getLeft();
     wbbOnnxFilename = inputs.getRight();
 
     // Tokenizer-File
     inputs = generateFileInput(lsMod, middle, margin, wSettingsGroup, wOnnxFilename,
         BaseMessages.getString(PKG, "SemanticSearchDialog.TokenizerFilename.Label"),
-        new String[] { "*.json", "*" },
-        new String[] { BaseMessages.getString(PKG, "System.FileType.JsonFiles"),
-            BaseMessages.getString(PKG, "System.FileType.AllFiles") });
+        new String[] {"*.json", "*"},
+        new String[] {BaseMessages.getString(PKG, "System.FileType.JsonFiles"),
+            BaseMessages.getString(PKG, "System.FileType.AllFiles")});
     wbbTokenizerFilename = inputs.getRight();
     wTokenizerFilename = inputs.getLeft();
 
@@ -300,7 +302,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     // ////////////////////////
     // START OF Storage TAB ///
     // ////////////////////////
-    tabItems = generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Store.Tab"));
+    tabItems =
+        generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Store.Tab"));
     Composite wStoreComp = tabItems.getLeft();
     CTabItem wStoreTab = tabItems.getRight();
 
@@ -336,7 +339,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     this.wChromaUrl = generateTextVar(middle, margin, wNeo4JConnection, wStoreGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.chroma.Label"),
         BaseMessages.getString(PKG, "SemanticSearchDialog.chroma.Tooltip"));
-
+    
     finalizeGroup(margin, wSettingsGroup, wStoreGroup);
 
     // ///////////////////////////////////////////////////////////
@@ -353,7 +356,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     // ////////////////////////
     // START OF Fields TAB ///
     // ////////////////////////
-    tabItems = generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Fields.Tab"));
+    tabItems =
+        generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Fields.Tab"));
     Composite wFieldsComp = tabItems.getLeft();
     CTabItem wFieldsTab = tabItems.getRight();
 
@@ -400,10 +404,12 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     int upInsRows = input.getLookupValues().size();
 
     ciReturn = new ColumnInfo[upInsCols];
-    ciReturn[0] = new ColumnInfo(BaseMessages.getString(PKG, "SemanticSearchDialog.ColumnInfo.FieldReturn"),
-        ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, false);
-    ciReturn[1] = new ColumnInfo(BaseMessages.getString(PKG, "SemanticSearchDialog.ColumnInfo.NewName"),
-        ColumnInfo.COLUMN_TYPE_TEXT, false);
+    ciReturn[0] =
+        new ColumnInfo(BaseMessages.getString(PKG, "SemanticSearchDialog.ColumnInfo.FieldReturn"),
+            ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] {""}, false);
+    ciReturn[1] =
+        new ColumnInfo(BaseMessages.getString(PKG, "SemanticSearchDialog.ColumnInfo.NewName"),
+            ColumnInfo.COLUMN_TYPE_TEXT, false);
 
     wReturn = new TableView(variables, wFieldsComp,
         SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, ciReturn,
@@ -607,24 +613,24 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     wKeyField.setText(Const.NVL(input.getOutputKeyField(), ""));
     wMaxValue.setText(Const.NVL(input.getMaximalValue(), ""));
     wDistanceField.setText(Const.NVL(input.getOutputDistanceField(), ""));
-
+    
     wModel.setText(Const.NVL(input.getEmbeddingModel().getDescription(),
         EmbeddingModel.ONNX_MODEL.getDescription()));
     activeModel();
 
     wOnnxFilename.setText(Const.NVL(input.getOnnxFilename(), ""));
     wTokenizerFilename.setText(Const.NVL(input.getTokenizerFilename(), ""));
-
+    
     wStore.setText(Const.NVL(input.getEmbeddingStore().getDescription(),
         EmbeddingStore.IN_MEMORY.getDescription()));
     activeStore();
-
+    
     wNeo4JConnection.setText(Const.NVL(input.getNeo4JConnectionName(), ""));
     wChromaUrl.setText(Const.NVL(input.getChromaUrl(), ""));
     wMaxValue.setText(Const.NVL(input.getMaximalValue(), "1"));
 
     for (int i = 0; i < input.getLookupValues().size(); i++) {
-      SemanticSearchMeta.SLookupValue lookupValue = input.getLookupValues().get(i);
+      LLMExtractionMeta.SLookupValue lookupValue = input.getLookupValues().get(i);
       TableItem item = wReturn.table.getItem(i);
       item.setText(1, Const.NVL(lookupValue.getName(), ""));
       item.setText(2, Const.NVL(lookupValue.getRename(), ""));
@@ -669,7 +675,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
 
     input.setNeo4JConnectionName(wNeo4JConnection.getText());
     input.setChromaUrl(wChromaUrl.getText());
-
+    
     input.setMainStreamField(wMainStreamField.getText());
     input.setLookupTransformName(wTransform.getText());
     input.setLookupTextField(wLookupTextField.getText());
@@ -688,7 +694,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
 
     input.getLookupValues().clear();
     for (TableItem item : wReturn.getNonEmptyItems()) {
-      SemanticSearchMeta.SLookupValue lookupValue = new SemanticSearchMeta.SLookupValue();
+      LLMExtractionMeta.SLookupValue lookupValue = new LLMExtractionMeta.SLookupValue();
       lookupValue.setName(item.getText(1));
       lookupValue.setRename(item.getText(2));
       input.getLookupValues().add(lookupValue);
@@ -730,9 +736,9 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
 
         IRowMeta r = pipelineMeta.getTransformFields(variables, wTransform.getText());
         if (r != null) {
-          String[] stringTypeFieldNames = r.getValueMetaList().stream()
-              .filter(meta -> meta.getType() == IValueMeta.TYPE_STRING)
-              .map(meta -> meta.getName()).toList().toArray(new String[0]);
+          String[] stringTypeFieldNames =
+              r.getValueMetaList().stream().filter(meta -> meta.getType() == IValueMeta.TYPE_STRING)
+                  .map(meta -> meta.getName()).toList().toArray(new String[0]);
           wLookupTextField.setItems(stringTypeFieldNames);
         }
       } catch (HopException ke) {
@@ -757,9 +763,9 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
 
         IRowMeta r = pipelineMeta.getTransformFields(variables, wTransform.getText());
         if (r != null) {
-          String[] stringTypeFieldNames = r.getValueMetaList().stream()
-              .filter(meta -> meta.getType() == IValueMeta.TYPE_STRING)
-              .map(meta -> meta.getName()).toList().toArray(new String[0]);
+          String[] stringTypeFieldNames =
+              r.getValueMetaList().stream().filter(meta -> meta.getType() == IValueMeta.TYPE_STRING)
+                  .map(meta -> meta.getName()).toList().toArray(new String[0]);
           wLookupKeyField.setItems(stringTypeFieldNames);
         }
       } catch (HopException ke) {
@@ -782,7 +788,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
       if (!Utils.isEmpty(transformFrom)) {
         IRowMeta r = pipelineMeta.getTransformFields(variables, transformFrom);
         if (r != null && !r.isEmpty()) {
-          BaseTransformDialog.getFieldsFromPrevious(r, wReturn, 1, new int[] { 1 }, new int[] { 4 }, -1,
+          BaseTransformDialog.getFieldsFromPrevious(r, wReturn, 1, new int[] {1}, new int[] {4}, -1,
               -1, null);
         } else {
           MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
