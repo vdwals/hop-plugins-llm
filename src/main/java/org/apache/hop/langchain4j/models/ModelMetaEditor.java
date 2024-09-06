@@ -54,12 +54,19 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
     public void createControl(Composite parent) {
         Control previous = buildHeaderUI(parent);
         buildModelSelection(parent, previous);
+        setWidgetsContent();
     }
 
     @Override
     public void getWidgetsContent(ModelMeta meta) {
         meta.setName(wName.getText());
-        guiCompositeWidgets.getWidgetsContents(meta.getModel(), ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
+        meta.setModel(meta.getModel());
+        if (meta.getModel() != null) {
+            guiCompositeWidgets.getWidgetsContents(meta.getModel(), ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
+            metaMap.putIfAbsent(meta.getModel().getClass(), meta.getModel());
+
+            System.out.println(((OnnxModelMeta) meta.getModel()).getModelPath());
+        }
     }
 
     @Override
@@ -67,7 +74,9 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         ModelMeta meta = this.getMetadata();
 
         wName.setText(Const.NVL(meta.getName(), ""));
-        wModelType.setText(Const.NVL(meta.getModel().getName(), ""));
+
+        String modelName = meta.getModel() == null ? null : meta.getModel().getName();
+        wModelType.setText(Const.NVL(modelName, OnnxModelMeta.NAME));
     }
 
     private Control buildHeaderUI(Composite parent) {
@@ -113,7 +122,7 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         wlModelType.setLayoutData(fdlConnectionType);
 
         wModelType = new Combo(parent, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-        wModelType.setItems(new String[] { "OnnxModel" });
+        wModelType.setItems(new String[] { OnnxModelMeta.NAME });
         PropsUi.setLook(wModelType);
         FormData fdConnectionType = new FormData();
         fdConnectionType.top = new FormAttachment(previous, 0);
@@ -167,20 +176,22 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
 
         ModelMeta modelMeta = this.getMetadata();
 
-        // Keep track of the old database type since this changes when getting the
-        // content
-        //
-        Class<? extends IModel> oldClass = modelMeta.getModel().getClass();
+        if (modelMeta.getModel() != null) {
+            // Keep track of the old database type since this changes when getting the
+            // content
+            //
+            Class<? extends IModel> oldClass = modelMeta.getModel().getClass();
+
+            // Save the state of this type, so we can switch back and forth
+            //
+            metaMap.put(oldClass, modelMeta.getModel());
+        }
+
         String newTypeName = wModelType.getText();
-        wModelType.setText(modelMeta.getPluginName());
 
         // Capture any information on the widgets
         //
         this.getWidgetsContent(modelMeta);
-
-        // Save the state of this type, so we can switch back and forth
-        //
-        metaMap.put(oldClass, modelMeta.getModel());
 
         // Now change the data type
         //
@@ -189,7 +200,10 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
 
         // Get possible information from the metadata map (from previous work)
         //
-        modelMeta.setModel(metaMap.get(modelMeta.getModel().getClass()));
+        if (metaMap.get(modelMeta.getModel().getClass()) != null)
+            modelMeta.setModel(metaMap.get(modelMeta.getModel().getClass()));
+        else
+            metaMap.put(modelMeta.getModel().getClass(), modelMeta.getModel());
 
         // Remove existing children
         //

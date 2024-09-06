@@ -30,12 +30,14 @@ public class ModelMeta extends HopMetadataBase implements Cloneable {
     }
 
     public void setModelType(String newTypeName) {
-        this.model = new OnnxModelMeta();
+        if (newTypeName.equals(OnnxModelMeta.NAME))
+            this.model = new OnnxModelMeta();
     }
 
-    public String getPluginName() {
-        if (model == null)
-            return "";
-        return model.getName();
+    public Class<? extends IModel> getModel(String newTypeName) {
+        if (newTypeName.equals(OnnxModelMeta.NAME))
+            return OnnxModelMeta.class;
+
+        return null;
     }
 }

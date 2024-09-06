@@ -10,6 +10,8 @@ import org.apache.hop.metadata.api.HopMetadataProperty;
 public class OnnxModelMeta implements Cloneable, IModel {
     private static final Class<?> PKG = OnnxModelMeta.class;
 
+    public static final String NAME = BaseMessages.getString(PKG, "Onnx.label.Name");
+
     @GuiWidgetElement(id = "modelPath", order = "10", parentId = ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID, type = GuiElementType.FILENAME, label = "i18n::Onnx.label.ModelPath", typeFilename = OnnxFileTypeFilename.class)
     @HopMetadataProperty(key = "modelPath")
     private String modelPath;
@@ -20,6 +22,22 @@ public class OnnxModelMeta implements Cloneable, IModel {
 
     @Override
     public String getName() {
-        return BaseMessages.getString(PKG, "Onnx.label.Name");
+        return NAME;
+    }
+
+    public String getModelPath() {
+        return modelPath;
+    }
+
+    public void setModelPath(String modelPath) {
+        this.modelPath = modelPath;
+    }
+
+    public String getTokenizerPath() {
+        return tokenizerPath;
+    }
+
+    public void setTokenizerPath(String tokenizerPath) {
+        this.tokenizerPath = tokenizerPath;
     }
 }
