@@ -1,4 +1,4 @@
-package org.apache.hop.langchain4j.models;
+package org.apache.hop.langchain4j.models.onnx;
 
 import org.apache.hop.core.gui.plugin.ITypeFilename;
 import org.apache.hop.i18n.BaseMessages;

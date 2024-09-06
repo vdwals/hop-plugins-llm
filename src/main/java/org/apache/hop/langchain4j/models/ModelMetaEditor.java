@@ -1,11 +1,17 @@
 package org.apache.hop.langchain4j.models;
 
 import java.util.Map;
+import java.util.List;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.hop.core.Const;
 import org.apache.hop.core.database.DatabaseMeta;
+import org.apache.hop.core.plugins.IPlugin;
+import org.apache.hop.core.plugins.PluginRegistry;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.langchain4j.LLMPluginType;
+import org.apache.hop.langchain4j.models.onnx.OnnxModelMeta;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.gui.GuiCompositeWidgets;
 import org.apache.hop.ui.core.gui.GuiCompositeWidgetsAdapter;
@@ -48,6 +54,25 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
 
         middle = PropsUi.getInstance().getMiddlePct();
         margin = PropsUi.getMargin();
+
+        metaMap = populateMetaMap();
+        metaMap.put(metadata.getModel().getClass(), metadata.getModel());
+    }
+
+    private Map<Class<? extends IModel>, IModel> populateMetaMap() {
+        metaMap = new HashMap<>();
+        List<IPlugin> plugins = PluginRegistry.getInstance().getPlugins(LLMPluginType.class);
+        for (IPlugin plugin : plugins) {
+            try {
+                IModel model = (IModel) PluginRegistry.getInstance().loadClass(plugin);
+
+                metaMap.put(model.getClass(), model);
+            } catch (Exception e) {
+                HopGui.getInstance().getLog().logError("Error instantiating database metadata", e);
+            }
+        }
+
+        return metaMap;
     }
 
     @Override

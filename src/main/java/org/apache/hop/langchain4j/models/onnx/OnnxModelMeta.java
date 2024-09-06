@@ -1,11 +1,15 @@
-package org.apache.hop.langchain4j.models;
+package org.apache.hop.langchain4j.models.onnx;
 
 import org.apache.hop.core.gui.plugin.GuiElementType;
 import org.apache.hop.core.gui.plugin.GuiPlugin;
 import org.apache.hop.core.gui.plugin.GuiWidgetElement;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.langchain4j.LLMMetaPlugin;
+import org.apache.hop.langchain4j.models.IModel;
+import org.apache.hop.langchain4j.models.ModelMeta;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 
+@LLMMetaPlugin(type = "OnnX", typeDescription = "Offline Onnx Model", documentationUrl = "/database/databases.html")
 @GuiPlugin(id = "GUI-OnnxModelMeta")
 public class OnnxModelMeta implements Cloneable, IModel {
     private static final Class<?> PKG = OnnxModelMeta.class;

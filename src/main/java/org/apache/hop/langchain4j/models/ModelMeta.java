@@ -2,6 +2,7 @@ package org.apache.hop.langchain4j.models;
 
 import org.apache.hop.metadata.api.HopMetadata;
 import org.apache.hop.metadata.api.HopMetadataBase;
+import org.apache.hop.langchain4j.models.onnx.OnnxModelMeta;
 
 @HopMetadata(key = "llmModel", name = "LLM Model", description = "Central setting for connection to diverse LLM provider")
 public class ModelMeta extends HopMetadataBase implements Cloneable {
@@ -10,6 +11,8 @@ public class ModelMeta extends HopMetadataBase implements Cloneable {
     private IModel model;
 
     public IModel getModel() {
+        if (model == null)
+            return new OnnxModelMeta();
         return model;
     }
 
