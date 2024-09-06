@@ -1,4 +1,4 @@
-package org.apache.hop.ui.langchain4j;
+package org.apache.hop.langchain4j.models;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -6,8 +6,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.database.DatabaseMeta;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.langchain4j.models.IModel;
-import org.apache.hop.langchain4j.models.ModelMeta;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.gui.GuiCompositeWidgets;
 import org.apache.hop.ui.core.gui.GuiCompositeWidgetsAdapter;
@@ -51,8 +49,8 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
 
     @Override
     public void createControl(Composite parent) {
-        buildHeaderUI(parent);
-        buildModelSelection(parent);
+        Control previous = buildHeaderUI(parent);
+        buildModelSelection(parent, previous);
     }
 
     @Override
@@ -69,7 +67,7 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         wModelType.setText(Const.NVL(meta.getModel().getName(), ""));
     }
 
-    private void buildHeaderUI(Composite parent) {
+    private Control buildHeaderUI(Composite parent) {
         // What's the name
         Label wlName = new Label(parent, SWT.RIGHT);
         PropsUi.setLook(wlName);
@@ -94,16 +92,18 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         fdSpacer.top = new FormAttachment(wName, 15);
         fdSpacer.right = new FormAttachment(100, 0);
         spacer.setLayoutData(fdSpacer);
+
+        return spacer;
     }
 
-    private Control buildModelSelection(Composite parent) {
+    private Control buildModelSelection(Composite parent, Control previous) {
         // What's the type of model?
         //
         Label wlModelType = new Label(parent, SWT.RIGHT);
         PropsUi.setLook(wlModelType);
         wlModelType.setText(BaseMessages.getString(PKG, "ModelDialog.label.ModelType"));
         FormData fdlConnectionType = new FormData();
-        fdlConnectionType.top = new FormAttachment(0, margin);
+        fdlConnectionType.top = new FormAttachment(previous, margin);
         fdlConnectionType.left = new FormAttachment(0, 0); // First one in the left top corner
         fdlConnectionType.right = new FormAttachment(middle, -margin);
         wlModelType.setLayoutData(fdlConnectionType);
@@ -123,9 +123,9 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         wModelSpecificComp = new Composite(parent, SWT.BACKGROUND);
         wModelSpecificComp.setLayout(new FormLayout());
         FormData fdDatabaseSpecificComp = new FormData();
+        fdDatabaseSpecificComp.top = new FormAttachment(lastControl, margin);
         fdDatabaseSpecificComp.left = new FormAttachment(0, 0);
         fdDatabaseSpecificComp.right = new FormAttachment(100, 0);
-        fdDatabaseSpecificComp.top = new FormAttachment(lastControl, margin);
         wModelSpecificComp.setLayoutData(fdDatabaseSpecificComp);
         PropsUi.setLook(wModelSpecificComp);
         lastControl = wModelSpecificComp;
@@ -134,7 +134,7 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         //
         guiCompositeWidgets = new GuiCompositeWidgets(manager.getVariables());
         guiCompositeWidgets.createCompositeWidgets(
-                getMetadata().getModel(),
+                new OnnxModelMeta(),
                 null,
                 wModelSpecificComp,
                 ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID,
