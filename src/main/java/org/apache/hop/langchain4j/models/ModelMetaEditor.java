@@ -97,7 +97,7 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         fdSpacer.right = new FormAttachment(100, 0);
         spacer.setLayoutData(fdSpacer);
 
-        return wName;
+        return spacer;
     }
 
     private Control buildModelSelection(Composite parent, Control previous) {
@@ -116,8 +116,8 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         wModelType.setItems(new String[] { "OnnxModel" });
         PropsUi.setLook(wModelType);
         FormData fdConnectionType = new FormData();
-        fdConnectionType.top = new FormAttachment(previous, 0, SWT.CENTER);
-        fdConnectionType.left = new FormAttachment(middle, 0); // To the right of the label
+        fdConnectionType.top = new FormAttachment(previous, 0);
+        fdConnectionType.left = new FormAttachment(wlModelType, margin); // To the right of the label
         wModelType.setLayoutData(fdConnectionType);
         Control lastControl = wModelType;
 
