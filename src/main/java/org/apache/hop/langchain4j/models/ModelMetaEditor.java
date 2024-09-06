@@ -26,10 +26,9 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Control;
 
-public class ModelEditor extends MetadataEditor<ModelMeta> {
-    private static final Class<?> PKG = ModelEditor.class;
+public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
+    private static final Class<?> PKG = ModelMetaEditor.class;
 
-    private PropsUi props;
     private int middle;
     private int margin;
 
@@ -46,21 +45,19 @@ public class ModelEditor extends MetadataEditor<ModelMeta> {
         MetadataPerspective.getInstance().updateEditor(this);
     };
 
-    public ModelEditor(HopGui hopGui, MetadataManager<ModelMeta> manager, ModelMeta metadata) {
+    public ModelMetaEditor(HopGui hopGui, MetadataManager<ModelMeta> manager, ModelMeta metadata) {
         super(hopGui, manager, metadata);
-        props = PropsUi.getInstance();
     }
 
     @Override
     public void createControl(Composite parent) {
         buildHeaderUI(parent);
-        Control lastControl = buildModelSelection(parent);
+        buildModelSelection(parent);
     }
 
     @Override
     public void getWidgetsContent(ModelMeta meta) {
         meta.setName(wName.getText());
-        meta.setModel(metaMap.get(wModelType.getText()));
         guiCompositeWidgets.getWidgetsContents(meta.getModel(), ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
     }
 
