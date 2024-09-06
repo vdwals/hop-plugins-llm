@@ -738,7 +738,7 @@ public class LLMExtractionDialog extends BaseTransformDialog implements ITransfo
         if (r != null) {
           String[] stringTypeFieldNames =
               r.getValueMetaList().stream().filter(meta -> meta.getType() == IValueMeta.TYPE_STRING)
-                  .map(meta -> meta.getName()).toList().toArray(new String[0]);
+                  .map(meta -> meta.getName()).collect(Collectors.toList()).toArray(new String[0]);
           wLookupTextField.setItems(stringTypeFieldNames);
         }
       } catch (HopException ke) {
@@ -765,7 +765,7 @@ public class LLMExtractionDialog extends BaseTransformDialog implements ITransfo
         if (r != null) {
           String[] stringTypeFieldNames =
               r.getValueMetaList().stream().filter(meta -> meta.getType() == IValueMeta.TYPE_STRING)
-                  .map(meta -> meta.getName()).toList().toArray(new String[0]);
+                  .map(meta -> meta.getName()).collect(Collectors.toList()).toArray(new String[0]);
           wLookupKeyField.setItems(stringTypeFieldNames);
         }
       } catch (HopException ke) {
