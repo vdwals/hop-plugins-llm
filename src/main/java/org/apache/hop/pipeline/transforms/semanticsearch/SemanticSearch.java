@@ -17,9 +17,6 @@ package org.apache.hop.pipeline.transforms.semanticsearch;
 
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.embedding.onnx.OnnxEmbeddingModel;
-import dev.langchain4j.model.embedding.onnx.PoolingMode;
-import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
@@ -40,13 +37,13 @@ import org.apache.hop.core.row.RowDataUtil;
 import org.apache.hop.core.row.RowMeta;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.langchain4j.models.ModelMeta;
 import org.apache.hop.neo4j.shared.NeoConnection;
 import org.apache.hop.pipeline.Pipeline;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransform;
 import org.apache.hop.pipeline.transform.TransformMeta;
 import org.apache.hop.pipeline.transforms.semanticsearch.SemanticSearchMeta.SLookupValue;
-import ai.djl.util.ClassLoaderUtils;
 
 /**
  * Performs a fuzzy match for each main stream field row An approximative match
@@ -384,33 +381,17 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
 
     data.maxResults = Const.toInt(resolve(meta.getMaximalValue()), 1);
 
-    switch (meta.getEmbeddingModel()) {
-      case ONNX_MODEL:
-        // Check lookup and main stream field
-        if (Utils.isEmpty(meta.getOnnxFilename())) {
-          logError(BaseMessages.getString(PKG, "SemanticSearch.Error.OnnxFileMissing"));
-          return false;
-        }
-        if (Utils.isEmpty(meta.getTokenizerFilename())) {
-          logError(BaseMessages.getString(PKG, "SemanticSearch.Error.TokenizerFileMissing"));
-          return false;
-        }
-        String onnxFile = resolve(meta.getOnnxFilename());
-        String tokenizerFile = resolve(meta.getTokenizerFilename());
-
-        setEmbeddingModel(onnxFile, tokenizerFile);
-        break;
-
-      case OPEN_AI:
-        if (Utils.isEmpty(meta.getOpenAiApiKey())) {
-          logError(BaseMessages.getString(PKG, "SemanticSearch.Error.APIKeyMissing"));
-          return false;
-        }
-        data.embeddingModel = OpenAiEmbeddingModel.withApiKey(meta.getOpenAiApiKey());
-
-      default:
-        logError(BaseMessages.getString(PKG, "SemanticSearch.Error.EmbeddingModelInvalid"));
-        return false;
+    if (Utils.isEmpty(meta.getLlModelName())) {
+      logError(BaseMessages.getString(PKG, "SemanticSearch.Error.llModelMissing"));
+      return false;
+    } 
+    try {
+      ModelMeta modelMeta = metadataProvider.getSerializer(ModelMeta.class).load(resolve(meta.getLlModelName()));
+      data.embeddingModel = modelMeta.getEmbeddingModel();
+    } catch (Exception e) {
+      log.logError("Could not get LL-Model '"
+          + resolve(meta.getLlModelName()) + "' from the metastore", e);
+      return false;
     }
 
     switch (meta.getEmbeddingStore()) {
@@ -452,22 +433,6 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     }
 
     return true;
-  }
-
-  private void setEmbeddingModel(String onnxFile, String tokenizerFile) {
-    /*
-     * The current Threads classloader from hop execution thread is not aware of
-     * dependencies from
-     * the plugin, the the classloader needs to be adjusted to dynamically load the
-     * models
-     * dependencies.
-     */
-    ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-
-    Thread.currentThread().setContextClassLoader(ClassLoaderUtils.class.getClassLoader());
-    data.embeddingModel = new OnnxEmbeddingModel(onnxFile, tokenizerFile, PoolingMode.MEAN);
-
-    Thread.currentThread().setContextClassLoader(contextClassLoader);
   }
 
   @Override

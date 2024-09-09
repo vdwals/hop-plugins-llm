@@ -4,6 +4,7 @@ import org.apache.hop.metadata.api.HopMetadata;
 import org.apache.hop.metadata.api.HopMetadataBase;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -57,5 +58,11 @@ public class ModelMeta extends HopMetadataBase implements Cloneable {
     public void setModel(IModel model) {
         this.type = model.getName();
         this.model = model;
+    }
+
+    public EmbeddingModel getEmbeddingModel() {
+        if (model != null)
+            return model.getEmbeddingModel();
+        return null;
     }
 }

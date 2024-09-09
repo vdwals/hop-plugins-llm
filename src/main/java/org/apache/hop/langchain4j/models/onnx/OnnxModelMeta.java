@@ -1,5 +1,6 @@
 package org.apache.hop.langchain4j.models.onnx;
 
+import org.apache.commons.lang3.ClassLoaderUtils;
 import org.apache.hop.core.gui.plugin.GuiElementType;
 import org.apache.hop.core.gui.plugin.GuiPlugin;
 import org.apache.hop.core.gui.plugin.GuiWidgetElement;
@@ -8,6 +9,9 @@ import org.apache.hop.langchain4j.models.IModel;
 import org.apache.hop.langchain4j.models.ModelMeta;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.embedding.onnx.OnnxEmbeddingModel;
+import dev.langchain4j.model.embedding.onnx.PoolingMode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -38,5 +42,17 @@ public class OnnxModelMeta implements IModel {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public EmbeddingModel getEmbeddingModel() {
+
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+
+        Thread.currentThread().setContextClassLoader(ClassLoaderUtils.class.getClassLoader());
+        EmbeddingModel onnxEmbeddingModel = new OnnxEmbeddingModel(modelPath, tokenizerPath, PoolingMode.MEAN);
+
+        Thread.currentThread().setContextClassLoader(contextClassLoader);
+
+        return onnxEmbeddingModel;
     }
 }

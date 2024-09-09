@@ -29,7 +29,6 @@ import org.apache.hop.core.row.value.ValueMetaString;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.langchain4j.EmbeddingModel;
 import org.apache.hop.langchain4j.EmbeddingStore;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
@@ -40,13 +39,16 @@ import org.apache.hop.pipeline.transform.TransformIOMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
 import org.apache.hop.pipeline.transform.stream.IStream;
 import org.apache.hop.pipeline.transform.stream.IStream.StreamType;
+
+import lombok.Getter;
+import lombok.Setter;
+
 import org.apache.hop.pipeline.transform.stream.Stream;
 import org.apache.hop.pipeline.transform.stream.StreamIcon;
 
-@Transform(id = "SemanticSearch", image = "SemanticSearch.svg", name = "Semantic Search",
-    description = "i18n::SemanticSearch.Description",
-    categoryDescription = "i18n:org.apache.hop.pipeline.transform:BaseTransform.Category.Lookup",
-    keywords = "i18n::SemanticSearchMeta.keyword")
+@Transform(id = "SemanticSearch", image = "SemanticSearch.svg", name = "Semantic Search", description = "i18n::SemanticSearch.Description", categoryDescription = "i18n:org.apache.hop.pipeline.transform:BaseTransform.Category.Lookup", keywords = "i18n::SemanticSearchMeta.keyword")
+@Getter
+@Setter
 public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, SemanticSearchData> {
   private static final Class<?> PKG = SemanticSearchMeta.class; // For Translator
 
@@ -55,17 +57,8 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   private EmbeddingStore embeddingStore;
 
   /** Embedding model type */
-  @HopMetadataProperty(key = "embeddingmodel", storeWithCode = true)
-  private EmbeddingModel embeddingModel;
-
-  @HopMetadataProperty(key = "onnxfilename")
-  private String onnxFilename;
-
-  @HopMetadataProperty(key = "tokenizerfilename")
-  private String tokenizerFilename;
-
-  @HopMetadataProperty(key = "openaiapikey")
-  private String openAiApiKey;
+  @HopMetadataProperty(key = "llmodel", injectionKey = "llmodel", injectionKeyDescription = "SemanticSearchMeta.Injection.llmodel")
+  private String llModelName;
 
   @HopMetadataProperty(key = "from")
   private String lookupTransformName;
@@ -101,11 +94,8 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   /** return these field values from lookup */
   @HopMetadataProperty(groupKey = "lookup", key = "value")
   private List<SLookupValue> lookupValues;
-  
-  @HopMetadataProperty(
-      key = "neo4jConnection",
-      injectionKey = "neo4jConnection",
-      injectionKeyDescription = "SemanticSearchMeta.Injection.connection")
+
+  @HopMetadataProperty(key = "neo4jConnection", injectionKey = "neo4jConnection", injectionKeyDescription = "SemanticSearchMeta.Injection.connection")
   private String neo4JConnectionName;
 
   @HopMetadataProperty(key = "chromaurl")
@@ -114,7 +104,6 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   public SemanticSearchMeta() {
     super();
     this.setEmbeddingStore(EmbeddingStore.IN_MEMORY);
-    this.setEmbeddingModel(EmbeddingModel.ONNX_MODEL);
     this.lookupValues = new ArrayList<>();
   }
 
@@ -122,7 +111,7 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     this();
     this.setNeo4JConnectionName(m.getNeo4JConnectionName());
     this.setEmbeddingStore(m.getEmbeddingStore());
-    this.setEmbeddingModel(m.getEmbeddingModel());
+    this.setLlModelName(m.getLlModelName());
     this.lookupTextField = m.lookupTextField;
     this.setLookupKeyField(m.getLookupKeyField());
     this.mainStreamField = m.mainStreamField;
@@ -141,7 +130,7 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   @Override
   public void setDefault() {
     setEmbeddingStore(EmbeddingStore.IN_MEMORY);
-    setEmbeddingModel(EmbeddingModel.ONNX_MODEL);
+    setLlModelName(null);
     setNeo4JConnectionName(null);
     lookupTextField = null;
     setLookupKeyField(null);
@@ -353,24 +342,9 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     return true;
   }
 
-  public EmbeddingStore getEmbeddingStore() {
-    return embeddingStore;
-  }
-
-  public void setEmbeddingStore(EmbeddingStore embeddingStore) {
-    this.embeddingStore = embeddingStore;
-  }
-
-  public EmbeddingModel getEmbeddingModel() {
-    return embeddingModel;
-  }
-
-  public void setEmbeddingModel(EmbeddingModel embeddingModel) {
-    this.embeddingModel = embeddingModel;
-  }
-
   /**
-   * Returns the Input/Output metadata for this transform. The generator transform only produces
+   * Returns the Input/Output metadata for this transform. The generator transform
+   * only produces
    * output, does not accept input!
    */
   @Override
@@ -390,168 +364,6 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     return ioMeta;
   }
 
-  /**
-   * Gets lookupTransformName
-   *
-   * @return value of lookupTransformName
-   */
-  public String getLookupTransformName() {
-    return lookupTransformName;
-  }
-
-  /**
-   * Sets lookupTransformName
-   *
-   * @param lookupTransformName value of lookupTransformName
-   */
-  public void setLookupTransformName(String lookupTransformName) {
-    this.lookupTransformName = lookupTransformName;
-  }
-
-  /**
-   * Gets lookupField
-   *
-   * @return value of lookupField
-   */
-  public String getLookupTextField() {
-    return lookupTextField;
-  }
-
-  /**
-   * Sets lookupField
-   *
-   * @param lookupField value of lookupField
-   */
-  public void setLookupTextField(String lookupField) {
-    this.lookupTextField = lookupField;
-  }
-
-  /**
-   * Gets mainStreamField
-   *
-   * @return value of mainStreamField
-   */
-  public String getMainStreamField() {
-    return mainStreamField;
-  }
-
-  /**
-   * Sets mainStreamField
-   *
-   * @param mainStreamField value of mainStreamField
-   */
-  public void setMainStreamField(String mainStreamField) {
-    this.mainStreamField = mainStreamField;
-  }
-
-  /**
-   * Gets outputmatchfield
-   *
-   * @return value of outputmatchfield
-   */
-  public String getOutputMatchField() {
-    return outputMatchField;
-  }
-
-  /**
-   * Sets outputmatchfield
-   *
-   * @param outputMatchField value of outputmatchfield
-   */
-  public void setOutputMatchField(String outputMatchField) {
-    this.outputMatchField = outputMatchField;
-  }
-
-  /**
-   * Gets lookupValues
-   *
-   * @return value of lookupValues
-   */
-  public List<SLookupValue> getLookupValues() {
-    return lookupValues;
-  }
-
-  public String getOnnxFilename() {
-    return onnxFilename;
-  }
-
-  public void setOnnxFilename(String filename) {
-    this.onnxFilename = filename;
-  }
-
-  public String getTokenizerFilename() {
-    return tokenizerFilename;
-  }
-
-  public void setTokenizerFilename(String tokenizerFilename) {
-    this.tokenizerFilename = tokenizerFilename;
-  }
-
-  /**
-   * Sets lookupValues
-   *
-   * @param lookupValues value of lookupValues
-   */
-  public void setLookupValues(List<SLookupValue> lookupValues) {
-    this.lookupValues = lookupValues;
-  }
-
-  public String getLookupKeyField() {
-    return lookupKeyField;
-  }
-
-  public void setLookupKeyField(String lookupKeyField) {
-    this.lookupKeyField = lookupKeyField;
-  }
-
-  public String getOutputKeyField() {
-    return outputKeyField;
-  }
-
-  public void setOutputKeyField(String outputKeyField) {
-    this.outputKeyField = outputKeyField;
-  }
-
-  public String getMaximalValue() {
-    return maximalValue;
-  }
-
-  public void setMaximalValue(String maximalValue) {
-    this.maximalValue = maximalValue;
-  }
-
-  public String getOutputDistanceField() {
-    return outputDistanceField;
-  }
-
-  public void setOutputDistanceField(String outputDistanceField) {
-    this.outputDistanceField = outputDistanceField;
-  }
-
-  public String getNeo4JConnectionName() {
-    return neo4JConnectionName;
-  }
-
-  public void setNeo4JConnectionName(String connectionName) {
-    this.neo4JConnectionName = connectionName;
-  }
-
-  public String getChromaUrl() {
-    return chromaUrl;
-  }
-
-  public void setChromaUrl(String chromaUrl) {
-    this.chromaUrl = chromaUrl;
-  }
-
-  public String getOpenAiApiKey() {
-    return openAiApiKey;
-  }
-
-  public void setOpenAiApiKey(String openAiApiKey) {
-    this.openAiApiKey = openAiApiKey;
-  }
-
   public static final class SLookupValue {
     @HopMetadataProperty(key = "name")
     private String name;
@@ -559,7 +371,8 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
     @HopMetadataProperty(key = "rename")
     private String rename;
 
-    public SLookupValue() {}
+    public SLookupValue() {
+    }
 
     public SLookupValue(SLookupValue v) {
       this.name = v.name;
