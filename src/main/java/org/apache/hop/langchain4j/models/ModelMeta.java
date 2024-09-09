@@ -43,4 +43,12 @@ public class ModelMeta extends HopMetadataBase implements Cloneable {
 
         return null;
     }
+
+    public String getPluginId() {
+        return model.getPluginId();
+    }
+
+    public void setPluginId(String pluginId) {
+        model.setPluginId(pluginId);
+    }
 }

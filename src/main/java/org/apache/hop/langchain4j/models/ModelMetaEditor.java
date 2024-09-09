@@ -6,12 +6,11 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.hop.core.Const;
-import org.apache.hop.core.database.DatabaseMeta;
 import org.apache.hop.core.plugins.IPlugin;
 import org.apache.hop.core.plugins.PluginRegistry;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.langchain4j.LLMPluginType;
 import org.apache.hop.langchain4j.models.onnx.OnnxModelMeta;
+import org.apache.hop.langchain4j.models.plugin.LlmMetaPluginType;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.gui.GuiCompositeWidgets;
 import org.apache.hop.ui.core.gui.GuiCompositeWidgetsAdapter;
@@ -61,10 +60,13 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
 
     private Map<Class<? extends IModel>, IModel> populateMetaMap() {
         metaMap = new HashMap<>();
-        List<IPlugin> plugins = PluginRegistry.getInstance().getPlugins(LLMPluginType.class);
+        List<IPlugin> plugins = PluginRegistry.getInstance().getPlugins(LlmMetaPluginType.class);
         for (IPlugin plugin : plugins) {
             try {
                 IModel model = (IModel) PluginRegistry.getInstance().loadClass(plugin);
+
+                model.setPluginId(plugin.getIds()[0]);
+                model.setPluginName(plugin.getName());
 
                 metaMap.put(model.getClass(), model);
             } catch (Exception e) {
@@ -89,8 +91,6 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         if (meta.getModel() != null) {
             guiCompositeWidgets.getWidgetsContents(meta.getModel(), ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
             metaMap.putIfAbsent(meta.getModel().getClass(), meta.getModel());
-
-            System.out.println(((OnnxModelMeta) meta.getModel()).getModelPath());
         }
     }
 
@@ -243,7 +243,7 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
                 modelMeta.getModel(),
                 null,
                 wModelSpecificComp,
-                DatabaseMeta.GUI_PLUGIN_ELEMENT_PARENT_ID,
+                ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID,
                 null);
         guiCompositeWidgets.setWidgetsListener(
                 new GuiCompositeWidgetsAdapter() {
