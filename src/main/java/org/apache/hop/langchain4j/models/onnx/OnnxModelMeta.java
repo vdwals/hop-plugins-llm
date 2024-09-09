@@ -6,12 +6,15 @@ import org.apache.hop.core.gui.plugin.GuiWidgetElement;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.langchain4j.models.IModel;
 import org.apache.hop.langchain4j.models.ModelMeta;
-import org.apache.hop.langchain4j.models.plugin.LlmMetaPlugin;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 
-@LlmMetaPlugin(type = "OnnX", typeDescription = "Offline Onnx Model")
+import lombok.Getter;
+import lombok.Setter;
+
 @GuiPlugin(id = "GUI-OnnxModelMeta")
-public class OnnxModelMeta implements Cloneable, IModel {
+@Getter
+@Setter
+public class OnnxModelMeta implements IModel {
     private static final Class<?> PKG = OnnxModelMeta.class;
 
     public static final String NAME = BaseMessages.getString(PKG, "Onnx.label.Name");
@@ -24,44 +27,16 @@ public class OnnxModelMeta implements Cloneable, IModel {
     @HopMetadataProperty(key = "tokenizerPath")
     private String tokenizerPath;
 
-    private String pluginId;
-
-    private String pluginName;
-
-    @Override
     public String getName() {
         return NAME;
     }
 
-    public String getModelPath() {
-        return modelPath;
-    }
-
-    public void setModelPath(String modelPath) {
-        this.modelPath = modelPath;
-    }
-
-    public String getTokenizerPath() {
-        return tokenizerPath;
-    }
-
-    public void setTokenizerPath(String tokenizerPath) {
-        this.tokenizerPath = tokenizerPath;
-    }
-
-    public String getPluginId() {
-        return pluginId;
-    }
-
-    public void setPluginId(String pluginId) {
-        this.pluginId = pluginId;
-    }
-
-    public String getPluginName() {
-        return pluginName;
-    }
-
-    public void setPluginName(String pluginName) {
-        this.pluginName = pluginName;
+    public IModel clone() {
+        try {
+            return (IModel) super.clone();
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

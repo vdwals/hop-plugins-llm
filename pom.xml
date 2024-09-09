@@ -27,6 +27,8 @@
 		<langchain4j.version>0.33.0</langchain4j.version>
 		<neo4j.driver.version>5.15.0</neo4j.driver.version>
 
+		<lombok.version>1.18.34</lombok.version>
+
 		<buildId>${maven.build.timestamp}</buildId>
 		<maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
 	</properties>
@@ -98,6 +100,12 @@
 			<version>${langchain4j.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<repositories>

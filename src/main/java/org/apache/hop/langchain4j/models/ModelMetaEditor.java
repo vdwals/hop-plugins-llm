@@ -1,16 +1,12 @@
 package org.apache.hop.langchain4j.models;
 
 import java.util.Map;
-import java.util.List;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.hop.core.Const;
-import org.apache.hop.core.plugins.IPlugin;
-import org.apache.hop.core.plugins.PluginRegistry;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.langchain4j.models.onnx.OnnxModelMeta;
-import org.apache.hop.langchain4j.models.plugin.LlmMetaPluginType;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.gui.GuiCompositeWidgets;
 import org.apache.hop.ui.core.gui.GuiCompositeWidgetsAdapter;
@@ -60,19 +56,8 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
 
     private Map<Class<? extends IModel>, IModel> populateMetaMap() {
         metaMap = new HashMap<>();
-        List<IPlugin> plugins = PluginRegistry.getInstance().getPlugins(LlmMetaPluginType.class);
-        for (IPlugin plugin : plugins) {
-            try {
-                IModel model = (IModel) PluginRegistry.getInstance().loadClass(plugin);
 
-                model.setPluginId(plugin.getIds()[0]);
-                model.setPluginName(plugin.getName());
-
-                metaMap.put(model.getClass(), model);
-            } catch (Exception e) {
-                HopGui.getInstance().getLog().logError("Error instantiating database metadata", e);
-            }
-        }
+        metaMap.put(OnnxModelMeta.class, new OnnxModelMeta());
 
         return metaMap;
     }
@@ -87,7 +72,6 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
     @Override
     public void getWidgetsContent(ModelMeta meta) {
         meta.setName(wName.getText());
-        meta.setModel(meta.getModel());
         if (meta.getModel() != null) {
             guiCompositeWidgets.getWidgetsContents(meta.getModel(), ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
             metaMap.putIfAbsent(meta.getModel().getClass(), meta.getModel());
@@ -101,7 +85,15 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         wName.setText(Const.NVL(meta.getName(), ""));
 
         String modelName = meta.getModel() == null ? null : meta.getModel().getName();
+
+        busyChangingModelType.set(true);
         wModelType.setText(Const.NVL(modelName, OnnxModelMeta.NAME));
+
+        guiCompositeWidgets.setWidgetsContents(
+                meta.getModel(),
+                wModelSpecificComp,
+                ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
+        busyChangingModelType.set(false);
     }
 
     private Control buildHeaderUI(Composite parent) {
@@ -217,6 +209,8 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         // Capture any information on the widgets
         //
         this.getWidgetsContent(modelMeta);
+        IModel oldModel = modelMeta.getModel();
+        metaMap.put(oldModel.getClass(), oldModel);
 
         // Now change the data type
         //
