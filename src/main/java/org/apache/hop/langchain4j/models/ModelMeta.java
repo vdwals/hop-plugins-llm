@@ -51,7 +51,7 @@ public class ModelMeta extends HopMetadataBase implements Cloneable {
 
     public IModel getModel() {
         if (model == null)
-            return new OnnxModelMeta();
+            setModel(new OnnxModelMeta());
         return model;
     }
 
