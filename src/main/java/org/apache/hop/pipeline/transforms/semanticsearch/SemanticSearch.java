@@ -25,6 +25,7 @@ import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.store.embedding.neo4j.Neo4jEmbeddingStore;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.IRowSet;
@@ -384,10 +385,18 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     if (Utils.isEmpty(meta.getLlModelName())) {
       logError(BaseMessages.getString(PKG, "SemanticSearch.Error.llModelMissing"));
       return false;
-    } 
+    }
     try {
       ModelMeta modelMeta = metadataProvider.getSerializer(ModelMeta.class).load(resolve(meta.getLlModelName()));
-      data.embeddingModel = modelMeta.getEmbeddingModel();
+
+      Map<String, String> attributeMap = modelMeta.getAttributeMap();
+
+      Map<String, String> resolvedAttributeMap = attributeMap.entrySet().stream()
+          .collect(Collectors.toUnmodifiableMap(
+              Map.Entry::getKey,
+              entry -> resolve(entry.getValue())));
+
+      data.embeddingModel = modelMeta.getEmbeddingModel(resolvedAttributeMap);
     } catch (Exception e) {
       log.logError("Could not get LL-Model '"
           + resolve(meta.getLlModelName()) + "' from the metastore", e);

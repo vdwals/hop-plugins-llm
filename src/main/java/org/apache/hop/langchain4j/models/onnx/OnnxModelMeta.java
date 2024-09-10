@@ -8,6 +8,7 @@ import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.langchain4j.models.IModel;
 import org.apache.hop.langchain4j.models.ModelMeta;
 import org.apache.hop.metadata.api.HopMetadataProperty;
+import java.util.Map;
 
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.OnnxEmbeddingModel;
@@ -20,6 +21,9 @@ import lombok.Setter;
 @Setter
 public class OnnxModelMeta implements IModel {
     private static final Class<?> PKG = OnnxModelMeta.class;
+
+    private static final String KEY_ONNX_PATH = "onnx_path";
+    private static final String KEY_TOKEN_PATH = "token_path";
 
     public static final String NAME = BaseMessages.getString(PKG, "Onnx.label.Name");
 
@@ -44,15 +48,20 @@ public class OnnxModelMeta implements IModel {
         }
     }
 
-    public EmbeddingModel getEmbeddingModel() {
+    public EmbeddingModel getEmbeddingModel(Map<String, String> attributes) {
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 
         Thread.currentThread().setContextClassLoader(ClassLoaderUtils.class.getClassLoader());
-        EmbeddingModel onnxEmbeddingModel = new OnnxEmbeddingModel(modelPath, tokenizerPath, PoolingMode.MEAN);
+        EmbeddingModel onnxEmbeddingModel = new OnnxEmbeddingModel(attributes.get(KEY_ONNX_PATH),
+                attributes.get(KEY_TOKEN_PATH), PoolingMode.MEAN);
 
         Thread.currentThread().setContextClassLoader(contextClassLoader);
 
         return onnxEmbeddingModel;
+    }
+
+    public Map<String, String> getAttributeMap() {
+        return Map.of(KEY_ONNX_PATH, modelPath, KEY_TOKEN_PATH, tokenizerPath);
     }
 }
