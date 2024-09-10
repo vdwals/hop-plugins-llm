@@ -121,7 +121,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
           IValueMeta additionalFieldValueMeta;
           for (int i = 0; i < meta.getLookupValues().size(); i++) {
             SLookupValue lookupValue = meta.getLookupValues().get(i);
-            data.indexOfCachedFields[i] = data.infoMeta.indexOfValue(lookupValue.getName());
+            data.indexOfCachedFields[i + 1] = data.infoMeta.indexOfValue(lookupValue.getName());
             if (data.indexOfCachedFields[i] < 0) {
               // The field is unreachable !
               throw new HopException(BaseMessages.getString(PKG,
@@ -147,7 +147,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       // Store textfield
       String textValue = storeFieldValue(rowSet, rowData, indexOfLookupTextField);
       // Store keyfield
-      Object keyValue = storeFieldValue(rowSet, rowData, indexOfLookupKeyField);
+      Object keyValue = rowData[indexOfLookupKeyField];
 
       Object[] storeData = new Object[data.indexOfCachedFields.length];
       storeData[0] = textValue;
