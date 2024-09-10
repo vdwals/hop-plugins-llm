@@ -30,7 +30,7 @@ public class SemanticSearchData extends BaseTransformData {
   public IRowMeta outputRowMeta;
 
   /** used to store values in used to look up things */
-  public HashMap<String, Object[]> look;
+  public HashMap<Object, Object[]> look;
 
   public EmbeddingStore<TextSegment> embeddingStore;
 

@@ -147,7 +147,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       // Store textfield
       String textValue = storeFieldValue(rowSet, rowData, indexOfLookupTextField);
       // Store keyfield
-      String keyValue = storeFieldValue(rowSet, rowData, indexOfLookupKeyField);
+      Object keyValue = storeFieldValue(rowSet, rowData, indexOfLookupKeyField);
 
       Object[] storeData = new Object[data.indexOfCachedFields.length];
       storeData[0] = textValue;
@@ -216,12 +216,12 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
         .collect(Collectors.toList());
   }
 
-  private void addToVector(String textValue, String keyValue, Object[] lookupRowValues)
+  private void addToVector(String textValue, Object keyValue, Object[] lookupRowValues)
       throws HopException {
     try {
       TextSegment segment = TextSegment.from(textValue);
       Embedding embedding = data.embeddingModel.embed(segment).content();
-      data.embeddingStore.add(keyValue, embedding);
+      data.embeddingStore.add(String.valueOf(keyValue), embedding);
 
       data.look.put(keyValue, lookupRowValues);
 
@@ -270,7 +270,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       if (data.addAdditionalFields) {
         for (int i = 1; i < meta.getLookupValues().size(); i++) {
           int nf = i + index;
-          keyRow[nf] = matchedRow[i];
+          retval[nf] = matchedRow[i];
         }
       }
 

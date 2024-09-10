@@ -37,6 +37,23 @@
     </hop>
   </order>
   <transform>
+    <name>Dummy (do nothing)</name>
+    <type>Dummy</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <attributes/>
+    <GUI>
+      <xloc>672</xloc>
+      <yloc>336</yloc>
+    </GUI>
+  </transform>
+  <transform>
     <name>Sample Input</name>
     <type>DataGrid</type>
     <description/>
@@ -96,15 +113,24 @@
     </partitioning>
     <data>
       <line>
+        <item>1</item>
         <item>Beer</item>
         <item>Beverage</item>
       </line>
       <line>
+        <item>2</item>
         <item>Apple</item>
         <item>Fruit</item>
       </line>
     </data>
     <fields>
+      <field>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <name>Id</name>
+        <type>Integer</type>
+      </field>
       <field>
         <length>-1</length>
         <precision>-1</precision>
@@ -137,44 +163,27 @@
       <method>none</method>
       <schema_name/>
     </partitioning>
+    <chromaurl/>
     <embeddingstore>inmemory</embeddingstore>
     <from>Sample Lookup</from>
     <llmodel>Local Model</llmodel>
     <lookup>
       <value>
-        <name>Name</name>
-      </value>
-      <value>
         <name>Category</name>
+        <rename/>
       </value>
     </lookup>
-    <lookupkeyfield>Name</lookupkeyfield>
+    <lookupkeyfield>Id</lookupkeyfield>
     <lookuptextfield>Name</lookuptextfield>
     <mainstreamfield>Name</mainstreamfield>
     <maximalValue>1</maximalValue>
+    <neo4jConnection/>
     <outputdistancefield>distance</outputdistancefield>
-    <outputkeyfield>match key</outputkeyfield>
+    <outputkeyfield>key</outputkeyfield>
     <outputmatchfield>match</outputmatchfield>
     <attributes/>
     <GUI>
       <xloc>448</xloc>
-      <yloc>336</yloc>
-    </GUI>
-  </transform>
-  <transform>
-    <name>Dummy (do nothing)</name>
-    <type>Dummy</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <attributes/>
-    <GUI>
-      <xloc>672</xloc>
       <yloc>336</yloc>
     </GUI>
   </transform>

@@ -675,10 +675,9 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
 
         IRowMeta r = pipelineMeta.getTransformFields(variables, wTransform.getText());
         if (r != null) {
-          String[] stringTypeFieldNames = r.getValueMetaList().stream()
-              .filter(meta -> meta.getType() == IValueMeta.TYPE_STRING)
+          String[] fieldNames = r.getValueMetaList().stream()
               .map(meta -> meta.getName()).collect(Collectors.toList()).toArray(new String[0]);
-          wLookupKeyField.setItems(stringTypeFieldNames);
+          wLookupKeyField.setItems(fieldNames);
         }
       } catch (HopException ke) {
         new ErrorDialog(shell,
@@ -742,6 +741,9 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
           String[] fieldNames = ConstUi.sortFieldNames(lookupFields);
           // return fields
           ciReturn[0].setComboValues(fieldNames);
+
+          gotLookupKeyFields = false;
+          gotLookupTextFields = false;
         } catch (HopException e) {
           logError("It was not possible to retrieve the list of fields for transform ["
               + wTransform.getText() + "]!");
