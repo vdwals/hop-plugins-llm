@@ -246,6 +246,10 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
         BaseMessages.getString(PKG, "SemanticSearchDialog.llmodel.Label"),
         BaseMessages.getString(PKG, "SemanticSearchDialog.llmodel.Tooltip"));
 
+    this.wMaxValue = generateTextVar(middle, margin, wLlmModel, wSettingsGroup,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Label"),
+        BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Tooltip"));
+
     PropsUi.setLook(wLlmModel);
     FormData fdLlm = new FormData();
     fdLlm.left = new FormAttachment(0, 0);
@@ -525,7 +529,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
 
     return new ImmutablePair<Composite, CTabItem>(wComp, wTab);
   }
-
 
   /** Copy information from the meta-data input to the dialog fields. */
   public void getData() {
