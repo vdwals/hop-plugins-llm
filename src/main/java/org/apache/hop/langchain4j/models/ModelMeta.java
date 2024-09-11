@@ -5,7 +5,6 @@ import org.apache.hop.metadata.api.HopMetadataBase;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 
 import java.util.Map;
-import java.util.Collections;
 
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import lombok.Getter;
