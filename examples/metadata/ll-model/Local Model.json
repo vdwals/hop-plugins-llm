@@ -1,9 +1,0 @@
-{
-  "name": "Local Model",
-  "model": {
-    "ONNX Model": {
-      "modelPath": "${PROJECT_HOME}/model/model_quantized.onnx",
-      "tokenizerPath": "${PROJECT_HOME}/model/tokenizer.json"
-    }
-  }
-}

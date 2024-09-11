@@ -29,7 +29,7 @@ import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.langchain4j.EmbeddingStore;
-import org.apache.hop.langchain4j.models.ModelMeta;
+import org.apache.hop.langchain4j.LlmMeta;
 import org.apache.hop.neo4j.shared.NeoConnection;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.ITransformDialog;
@@ -85,7 +85,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
   private TextVar wKeyField;
   private TextVar wMaxValue;
 
-  private MetaSelectionLine<ModelMeta> wLlmModel;
+  private MetaSelectionLine<LlmMeta> wLlmModel;
 
   private Button wGetLookup;
 
@@ -241,7 +241,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
 
     // Model
-    wLlmModel = new MetaSelectionLine<>(variables, metadataProvider, ModelMeta.class,
+    wLlmModel = new MetaSelectionLine<>(variables, metadataProvider, 
+        LlmMeta.class,
         wSettingsGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER,
         BaseMessages.getString(PKG, "SemanticSearchDialog.llmodel.Label"),
         BaseMessages.getString(PKG, "SemanticSearchDialog.llmodel.Tooltip"));

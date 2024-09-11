@@ -1,17 +1,18 @@
 package org.apache.hop.langchain4j.models;
 
+import org.apache.hop.core.logging.ILogChannel;
+import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.metadata.api.HopMetadataObject;
-import java.util.Map;
+import org.apache.hop.metadata.api.IHopMetadataProvider;
 
 import dev.langchain4j.model.embedding.EmbeddingModel;
 
-@HopMetadataObject(objectFactory = ModelMetaObjectFactory.class)
+@HopMetadataObject(objectFactory = IModelObjectFactory.class)
 public interface IModel extends Cloneable {
     public String getName();
 
     public IModel clone();
 
-    public EmbeddingModel getEmbeddingModel(Map<String, String> attributes);
-
-    public Map<String, String> getAttributeMap();
+    public EmbeddingModel getEmbeddingModel(IHopMetadataProvider metadataProvider, ILogChannel log,
+            IVariables variables);
 }

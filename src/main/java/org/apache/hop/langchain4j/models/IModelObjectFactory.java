@@ -4,7 +4,7 @@ import org.apache.hop.core.exception.HopException;
 import org.apache.hop.langchain4j.models.onnx.OnnxModelMeta;
 import org.apache.hop.metadata.api.IHopMetadataObjectFactory;
 
-public class ModelMetaObjectFactory implements IHopMetadataObjectFactory {
+public class IModelObjectFactory implements IHopMetadataObjectFactory {
 
     @Override
     public Object createObject(String id, Object parentObject) throws HopException {

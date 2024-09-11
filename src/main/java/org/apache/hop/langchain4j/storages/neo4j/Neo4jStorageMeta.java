@@ -7,8 +7,8 @@ import org.apache.hop.core.gui.plugin.GuiWidgetElement;
 import org.apache.hop.core.logging.ILogChannel;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.langchain4j.LlmMeta;
 import org.apache.hop.langchain4j.storages.IStorage;
-import org.apache.hop.langchain4j.storages.StorageMeta;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.neo4j.shared.NeoConnection;
@@ -27,7 +27,7 @@ public class Neo4jStorageMeta implements IStorage {
 
     public static final String NAME = BaseMessages.getString(PKG, "Neo4j.label.Name");
 
-    @GuiWidgetElement(id = "neoConnectionName", order = "10", parentId = StorageMeta.GUI_PLUGIN_ELEMENT_PARENT_ID, type = GuiElementType.TEXT, label = "i18n::Neo4j.label.neo4jconnectionname")
+    @GuiWidgetElement(id = "neoConnectionName", order = "10", parentId = LlmMeta.GUI_PLUGIN_ELEMENT_PARENT_ID, type = GuiElementType.TEXT, label = "i18n::Neo4j.label.neo4jconnectionname")
     @HopMetadataProperty(key = "neoConnectionName")
     private String neoConnectionString;
 
