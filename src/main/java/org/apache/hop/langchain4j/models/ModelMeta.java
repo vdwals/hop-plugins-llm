@@ -64,14 +64,10 @@ public class ModelMeta extends HopMetadataBase implements Cloneable {
     }
 
     public EmbeddingModel getEmbeddingModel(Map<String, String> attributes) {
-        if (model != null)
-            return model.getEmbeddingModel(attributes);
-        return null;
+        return getModel().getEmbeddingModel(attributes);
     }
 
     public Map<String, String> getAttributeMap() {
-        if (model != null)
-            return model.getAttributeMap();
-        return Collections.emptyMap();
+        return getModel().getAttributeMap();
     }
 }

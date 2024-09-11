@@ -51,7 +51,8 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         margin = PropsUi.getMargin();
 
         metaMap = populateMetaMap();
-        metaMap.put(metadata.getModel().getClass(), metadata.getModel());
+        IModel defaultModel = metadata.getModel();
+        metaMap.put(defaultModel.getClass(), defaultModel);
     }
 
     private Map<Class<? extends IModel>, IModel> populateMetaMap() {
@@ -74,7 +75,7 @@ public class ModelMetaEditor extends MetadataEditor<ModelMeta> {
         meta.setName(wName.getText());
         if (meta.getModel() != null) {
             guiCompositeWidgets.getWidgetsContents(meta.getModel(), ModelMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
-            metaMap.putIfAbsent(meta.getModel().getClass(), meta.getModel());
+            metaMap.put(meta.getModel().getClass(), meta.getModel());
         }
     }
 
