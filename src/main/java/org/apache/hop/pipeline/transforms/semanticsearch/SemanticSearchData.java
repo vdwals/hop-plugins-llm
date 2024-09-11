@@ -26,6 +26,11 @@ import org.apache.hop.pipeline.transform.BaseTransformData;
 import org.apache.hop.pipeline.transform.stream.IStream;
 
 public class SemanticSearchData extends BaseTransformData {
+  public static final int VALUE_INDEX = 0;
+  public static final int KEY_INDEX = 1;
+  public static final int ADDITIONAL_VALUES_START_INDEX = 2;
+  public static final int LOOKUP_VALUES_META_START_INDEX = 1;
+
   public IRowMeta previousRowMeta;
   public IRowMeta outputRowMeta;
 

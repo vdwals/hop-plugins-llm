@@ -118,16 +118,19 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
 
         // Check additional fields
         if (data.addAdditionalFields) {
-          IValueMeta additionalFieldValueMeta;
           for (int i = 0; i < meta.getLookupValues().size(); i++) {
             SLookupValue lookupValue = meta.getLookupValues().get(i);
-            data.indexOfCachedFields[i + 1] = data.infoMeta.indexOfValue(lookupValue.getName());
-            if (data.indexOfCachedFields[i] < 0) {
+            int additionalFieldIndex = data.infoMeta
+                .indexOfValue(lookupValue.getName());
+            if (additionalFieldIndex < 0) {
               // The field is unreachable !
               throw new HopException(BaseMessages.getString(PKG,
                   "SemanticSearch.Exception.CouldnotFindLookField", lookupValue.getName()));
             }
-            additionalFieldValueMeta = data.infoMeta.getValueMeta(data.indexOfCachedFields[i]);
+            int cachedFieldIndex = i + SemanticSearchData.ADDITIONAL_VALUES_START_INDEX;
+            data.indexOfCachedFields[cachedFieldIndex] = additionalFieldIndex;
+
+            IValueMeta additionalFieldValueMeta = data.infoMeta.getValueMeta(additionalFieldIndex);
             additionalFieldValueMeta.setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
             data.infoCache.addValueMeta(additionalFieldValueMeta);
           }
@@ -150,10 +153,11 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       Object keyValue = rowData[indexOfLookupKeyField];
 
       Object[] storeData = new Object[data.indexOfCachedFields.length];
-      storeData[0] = textValue;
+      storeData[SemanticSearchData.VALUE_INDEX] = textValue;
+      storeData[SemanticSearchData.KEY_INDEX] = keyValue;
 
       // Add additional fields?
-      for (int i = 1; i < data.indexOfCachedFields.length; i++) {
+      for (int i = SemanticSearchData.ADDITIONAL_VALUES_START_INDEX; i < data.indexOfCachedFields.length; i++) {
         IValueMeta fromStreamRowMeta = rowSet.getRowMeta().getValueMeta(data.indexOfCachedFields[i]);
         if (fromStreamRowMeta.isStorageBinaryString()) {
           storeData[i] = fromStreamRowMeta.convertToNormalStorageType(rowData[data.indexOfCachedFields[i]]);
@@ -221,9 +225,10 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     try {
       TextSegment segment = TextSegment.from(textValue);
       Embedding embedding = data.embeddingModel.embed(segment).content();
-      data.embeddingStore.add(String.valueOf(keyValue), embedding);
+      String keyString = String.valueOf(keyValue);
+      data.embeddingStore.add(keyString, embedding);
 
-      data.look.put(keyValue, lookupRowValues);
+      data.look.put(keyString, lookupRowValues);
 
     } catch (OutOfMemoryError o) {
       // exception out of memory
@@ -251,26 +256,27 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       Double score = embeddingMatch.score();
 
       Object[] matchedRow = data.look.get(key);
-      String value = (String) matchedRow[0];
+      Object resultKey = matchedRow[SemanticSearchData.KEY_INDEX];
+      String value = (String) matchedRow[SemanticSearchData.VALUE_INDEX];
 
       // Reserve room
       Object[] retval = RowDataUtil.allocateRowData(data.outputRowMeta.size());
 
-      int index = 0;
+      int insertIndex = 0;
       if (data.returnMatchValue)
-        retval[index++] = value;
+        retval[insertIndex++] = value;
 
       if (data.returnKeyValue)
-        retval[index++] = key;
+        retval[insertIndex++] = resultKey;
 
       if (data.returnDistanceValue)
-        retval[index++] = score;
+        retval[insertIndex++] = score;
 
       // Add additional return values?
       if (data.addAdditionalFields) {
-        for (int i = 1; i < meta.getLookupValues().size(); i++) {
-          int nf = i + index;
-          retval[nf] = matchedRow[i];
+        for (int i = 0; i < meta.getLookupValues().size(); i++) {
+          int nf = i + insertIndex;
+          retval[nf] = matchedRow[i + SemanticSearchData.ADDITIONAL_VALUES_START_INDEX];
         }
       }
 
@@ -369,7 +375,7 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
     data.returnDistanceValue = !Utils.isEmpty(resolve(meta.getOutputDistanceField()));
 
     // Set the number of fields to cache default value is one
-    int nrFields = 1;
+    int nrFields = SemanticSearchData.ADDITIONAL_VALUES_START_INDEX;
 
     if (!meta.getLookupValues().isEmpty()) {
       // cache also additional fields
