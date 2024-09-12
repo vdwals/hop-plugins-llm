@@ -29,6 +29,7 @@ import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.langchain4j.LlmMeta;
+import org.apache.hop.langchain4j.utils.GuiUtils;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.ITransformDialog;
 import org.apache.hop.pipeline.transform.TransformMeta;
@@ -150,7 +151,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     // /////////////////////////////////
     // START OF Lookup Fields GROUP
     // /////////////////////////////////
-    Group wLookupGroup = generateGroup(wGeneralComp,
+    Group wLookupGroup = GuiUtils.generateGroup(wGeneralComp,
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
 
     // Source transform line...
@@ -163,15 +164,15 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
         BaseMessages.getString(PKG, "SemanticSearchDialog.SourceTransform.Label"));
 
     // LookupFields
-    wLookupTextField = generateCombVar(middle, margin, wTransform, wLookupGroup,
+    wLookupTextField = GuiUtils.generateCombVar(middle, margin, wTransform, wLookupGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.wlLookupTextField.Label"),
-        e -> setLookupTextField());
+        e -> setLookupTextField(), variables);
 
-    wLookupKeyField = generateCombVar(middle, margin, wLookupTextField, wLookupGroup,
+    wLookupKeyField = GuiUtils.generateCombVar(middle, margin, wLookupTextField, wLookupGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.wlLookupKeyField.Label"),
-        e -> setLookupKeyField());
+        e -> setLookupKeyField(), variables);
 
-    finalizeGroup(margin, wTransformName, wLookupGroup);
+    GuiUtils.finalizeGroup(margin, wTransformName, wLookupGroup);
 
     // ///////////////////////////////////////////////////////////
     // / END OF Lookup GROUP
@@ -192,11 +193,11 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     wMainStreamGroup.setLayout(mainStreamGroupLayout);
 
     // MainStreamFieldName field
-    wMainStreamField = generateCombVar(middle, margin, wLookupGroup, wMainStreamGroup,
+    wMainStreamField = GuiUtils.generateCombVar(middle, margin, wLookupGroup, wMainStreamGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.wlMainStreamField.Label"),
-        e -> setMainStreamField());
+        e -> setMainStreamField(), variables);
 
-    finalizeGroup(margin, wLookupGroup, wMainStreamGroup);
+    GuiUtils.finalizeGroup(margin, wLookupGroup, wMainStreamGroup);
 
     // ///////////////////////////////////////////////////////////
     // / END OF MainStream GROUP
@@ -230,11 +231,11 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     // START OF Settings Fields GROUP
     // /////////////////////////////////
 
-    Group wSettingsGroup = generateGroup(wModelComp,
+    Group wSettingsGroup = GuiUtils.generateGroup(wModelComp,
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
 
     // Model
-    wLlmModel = new MetaSelectionLine<>(variables, metadataProvider, 
+    wLlmModel = new MetaSelectionLine<>(variables, metadataProvider,
         LlmMeta.class,
         wSettingsGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER,
         BaseMessages.getString(PKG, "SemanticSearchDialog.llmodel.Label"),
@@ -255,7 +256,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
       new ErrorDialog(shell, "Error", "Error getting list of models", e);
     }
 
-    finalizeGroup(margin, wMainStreamGroup, wSettingsGroup);
+    GuiUtils.finalizeGroup(margin, wMainStreamGroup, wSettingsGroup);
 
     // ///////////////////////////////////////////////////////////
     // / END OF Settings GROUP
@@ -279,7 +280,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     // START OF OutputFields Fields GROUP
     // /////////////////////////////////
 
-    Group wOutputFieldsGroup = generateGroup(wFieldsComp,
+    Group wOutputFieldsGroup = GuiUtils.generateGroup(wFieldsComp,
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.OutputFieldsGroup.Label"));
 
     this.wMatchField = generateTextVar(middle, margin, wSettingsGroup, wOutputFieldsGroup,
@@ -291,7 +292,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     this.wDistanceField = generateTextVar(middle, margin, wKeyField, wOutputFieldsGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.DistanceField.Label"), null);
 
-    finalizeGroup(margin, wSettingsGroup, wOutputFieldsGroup);
+    GuiUtils.finalizeGroup(margin, wSettingsGroup, wOutputFieldsGroup);
 
     // ///////////////////////////////////////////////////////////
     // / END OF OutputFields GROUP
@@ -361,7 +362,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
   private TextVar generateTextVar(int middle, int margin, Control wPreviousControl, Group wGroup,
       String label, String tooltip) {
 
-    generateLabel(middle, margin, wPreviousControl, wGroup, label);
+    GuiUtils.generateLabel(middle, margin, wPreviousControl, wGroup, label);
 
     TextVar wTextField = new TextVar(variables, wGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
     PropsUi.setLook(wTextField);
@@ -377,35 +378,10 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     return wTextField;
   }
 
-  private void finalizeGroup(int margin, Control cPreviousControl, Group wGroup) {
-    FormData fdSettingsGroup = new FormData();
-    fdSettingsGroup.left = new FormAttachment(0, margin);
-    fdSettingsGroup.top = new FormAttachment(cPreviousControl, margin);
-    fdSettingsGroup.right = new FormAttachment(100, -margin);
-    wGroup.setLayoutData(fdSettingsGroup);
-  }
-
-  private ComboVar generateCombVar(int middle, int margin, Control wPreviousControl,
-      Group wLookupGroup, String label, Listener listener) {
-    generateLabel(middle, margin, wPreviousControl, wLookupGroup, label);
-
-    ComboVar wComboVarField = new ComboVar(variables, wLookupGroup, SWT.BORDER | SWT.READ_ONLY);
-    wComboVarField.setEditable(true);
-    PropsUi.setLook(wComboVarField);
-    FormData fdLookupTextField = new FormData();
-    fdLookupTextField.left = new FormAttachment(middle, 0);
-    fdLookupTextField.top = new FormAttachment(wPreviousControl, margin);
-    fdLookupTextField.right = new FormAttachment(100, -margin);
-    wComboVarField.setLayoutData(fdLookupTextField);
-    wComboVarField.addListener(SWT.FocusIn, listener);
-
-    return wComboVarField;
-  }
-
   private CCombo generateCCombo(int middle, int margin, Control previousControl, Group wGroup,
       String[] items, Listener listener, String label) {
 
-    generateLabel(middle, margin, previousControl, wGroup, label);
+    GuiUtils.generateLabel(middle, margin, previousControl, wGroup, label);
 
     CCombo wCCombo = new CCombo(wGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
     PropsUi.setLook(wCCombo);
@@ -421,30 +397,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     wCCombo.setLayoutData(fdTransform);
 
     return wCCombo;
-  }
-
-  private void generateLabel(int middle, int margin, Control wPreviousControl, Group wCurrentGroup,
-      String label) {
-    Label wlModel = new Label(wCurrentGroup, SWT.RIGHT);
-    wlModel.setText(label);
-    PropsUi.setLook(wlModel);
-    FormData fdlModel = new FormData();
-    fdlModel.left = new FormAttachment(0, 0);
-    fdlModel.right = new FormAttachment(middle, -margin);
-    fdlModel.top = new FormAttachment(wPreviousControl, margin);
-    wlModel.setLayoutData(fdlModel);
-  }
-
-  private Group generateGroup(Composite wParentComp, String label) {
-    Group wSettingsGroup = new Group(wParentComp, SWT.SHADOW_NONE);
-    PropsUi.setLook(wSettingsGroup);
-    wSettingsGroup.setText(label);
-
-    FormLayout settingsGroupLayout = new FormLayout();
-    settingsGroupLayout.marginWidth = 10;
-    settingsGroupLayout.marginHeight = 10;
-    wSettingsGroup.setLayout(settingsGroupLayout);
-    return wSettingsGroup;
   }
 
   private Pair<Composite, CTabItem> generateTab(CTabFolder wTabFolder, String label) {
