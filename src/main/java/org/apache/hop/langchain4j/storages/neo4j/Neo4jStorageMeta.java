@@ -7,11 +7,12 @@ import org.apache.hop.core.gui.plugin.GuiWidgetElement;
 import org.apache.hop.core.logging.ILogChannel;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.langchain4j.LlmMeta;
 import org.apache.hop.langchain4j.storages.IStorage;
-import org.apache.hop.langchain4j.storages.StorageMeta;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.neo4j.shared.NeoConnection;
+import org.apache.hop.neo4j.shared.NeoConnectionTypeMetadata;
 
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingStore;
@@ -27,9 +28,9 @@ public class Neo4jStorageMeta implements IStorage {
 
     public static final String NAME = BaseMessages.getString(PKG, "Neo4j.label.Name");
 
-    @GuiWidgetElement(id = "neoConnectionName", order = "10", parentId = StorageMeta.GUI_PLUGIN_ELEMENT_PARENT_ID, type = GuiElementType.TEXT, label = "i18n::Neo4j.label.neo4jconnectionname")
+    @GuiWidgetElement(id = "neoConnectionName", order = "10", parentId = LlmMeta.GUI_PLUGIN_ELEMENT_PARENT_ID, type = GuiElementType.METADATA, typeMetadata = NeoConnectionTypeMetadata.class, label = "i18n::Neo4j.label.neo4jconnectionname")
     @HopMetadataProperty(key = "neoConnectionName")
-    private String neoConnectionString;
+    private String neoConnectionName;
 
     @Override
     public String getName() {
@@ -41,13 +42,13 @@ public class Neo4jStorageMeta implements IStorage {
             IVariables variables) {
         try {
             NeoConnection neoConnection = metadataProvider.getSerializer(NeoConnection.class)
-                    .load(variables.resolve(neoConnectionString));
+                    .load(variables.resolve(neoConnectionName));
 
             return Neo4jEmbeddingStore.builder().driver(neoConnection.getDriver(log, variables))
                     .dimension(1536).databaseName(variables.resolve(neoConnection.getDatabaseName())).build();
         } catch (HopException e) {
             log.logError("Unable to get or create Neo4j database driver for database '"
-                    + neoConnectionString + "'", e);
+                    + neoConnectionName + "'", e);
             return null;
         }
     }

@@ -20,16 +20,11 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
-import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
-import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
-import dev.langchain4j.store.embedding.neo4j.Neo4jEmbeddingStore;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.IRowSet;
-import org.apache.hop.core.exception.HopConfigException;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopValueException;
 import org.apache.hop.core.row.IRowMeta;
@@ -38,8 +33,7 @@ import org.apache.hop.core.row.RowDataUtil;
 import org.apache.hop.core.row.RowMeta;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.langchain4j.models.ModelMeta;
-import org.apache.hop.neo4j.shared.NeoConnection;
+import org.apache.hop.langchain4j.LlmMeta;
 import org.apache.hop.pipeline.Pipeline;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransform;
@@ -393,60 +387,17 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
       return false;
     }
     try {
-      ModelMeta modelMeta = metadataProvider.getSerializer(ModelMeta.class).load(resolve(meta.getLlModelName()));
+      LlmMeta modelMeta = metadataProvider.getSerializer(LlmMeta.class).load(resolve(meta.getLlModelName()));
 
-      Map<String, String> attributeMap = modelMeta.getAttributeMap();
-
-      Map<String, String> resolvedAttributeMap = attributeMap.entrySet().stream()
-          .collect(Collectors.toUnmodifiableMap(
-              Map.Entry::getKey,
-              entry -> resolve(entry.getValue())));
-
-      data.embeddingModel = modelMeta.getEmbeddingModel(resolvedAttributeMap);
+      data.embeddingModel = modelMeta.getEmbeddingModel(metadataProvider, log, this);
+      data.embeddingStore = modelMeta.getEmbeddingStorage(metadataProvider, log, this);
     } catch (Exception e) {
       log.logError("Could not get LL-Model '"
           + resolve(meta.getLlModelName()) + "' from the metastore", e);
       return false;
     }
 
-    switch (meta.getEmbeddingStore()) {
-      case IN_MEMORY:
-        data.embeddingStore = new InMemoryEmbeddingStore<TextSegment>();
-        break;
-
-      case NEO4J:
-        NeoConnection neoConnection;
-        try {
-          neoConnection = metadataProvider.getSerializer(NeoConnection.class)
-              .load(resolve(meta.getNeo4JConnectionName()));
-        } catch (HopException e) {
-          log.logError("Could not gencsv Neo4j connection '"
-              + resolve(meta.getNeo4JConnectionName()) + "' from the metastore", e);
-          return false;
-        }
-        if (neoConnection == null) {
-          log.logError("Connection '" + resolve(meta.getNeo4JConnectionName())
-              + "' could not be found in the metadata: " + metadataProvider.getDescription());
-          return false;
-        }
-        try {
-          data.embeddingStore = Neo4jEmbeddingStore.builder().driver(neoConnection.getDriver(log, this))
-              .dimension(1536).databaseName(neoConnection.getDatabaseName()).build();
-        } catch (HopConfigException e) {
-          log.logError("Unable to get or create Neo4j database driver for database '"
-              + neoConnection.getName() + "'", e);
-        }
-        break;
-
-      case CHROMA:
-        data.embeddingStore = ChromaEmbeddingStore.builder().baseUrl(meta.getChromaUrl())
-            .collectionName(dev.langchain4j.internal.Utils.randomUUID()).build();
-        break;
-      default:
-        logError(BaseMessages.getString(PKG, "SemanticSearch.Error.EmbeddingStoreInvalid"));
-        return false;
-    }
-
+    
     return true;
   }
 

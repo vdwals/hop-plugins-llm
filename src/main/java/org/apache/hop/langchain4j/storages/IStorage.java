@@ -8,7 +8,7 @@ import org.apache.hop.metadata.api.IHopMetadataProvider;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 
-@HopMetadataObject(objectFactory = StorageMetaObjectFactory.class)
+@HopMetadataObject(objectFactory = IStorageObjectFactory.class)
 public interface IStorage {
 
     String getName();

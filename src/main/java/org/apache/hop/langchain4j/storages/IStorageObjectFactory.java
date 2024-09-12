@@ -5,7 +5,7 @@ import org.apache.hop.langchain4j.storages.inmemory.InMemoryStorageMeta;
 import org.apache.hop.langchain4j.storages.neo4j.Neo4jStorageMeta;
 import org.apache.hop.metadata.api.IHopMetadataObjectFactory;
 
-public class StorageMetaObjectFactory implements IHopMetadataObjectFactory {
+public class IStorageObjectFactory implements IHopMetadataObjectFactory {
 
     @Override
     public Object createObject(String id, Object parentObject) throws HopException {

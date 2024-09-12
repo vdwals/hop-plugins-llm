@@ -5,5 +5,8 @@
       "modelPath": "${PROJECT_HOME}/model/model_quantized.onnx",
       "tokenizerPath": "${PROJECT_HOME}/model/tokenizer.json"
     }
+  },
+  "storage": {
+    "InMemory Store": {}
   }
 }
