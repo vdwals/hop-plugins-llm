@@ -21,7 +21,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@HopMetadata(key = "llm", name = "Large Language Model", description = "Central setting for connection to diverse large language Models")
+@HopMetadata(key = "llm", name = "Large Language Model", description = "Central setting for connection to diverse large language Models", image = "LlmMeta.svg")
 @Getter
 @Setter
 @NoArgsConstructor

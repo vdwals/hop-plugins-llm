@@ -29,7 +29,6 @@ import org.apache.hop.core.row.value.ValueMetaString;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.langchain4j.EmbeddingStore;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
@@ -51,10 +50,6 @@ import org.apache.hop.pipeline.transform.stream.StreamIcon;
 @Setter
 public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, SemanticSearchData> {
   private static final Class<?> PKG = SemanticSearchMeta.class; // For Translator
-
-  /** Embedding store type */
-  @HopMetadataProperty(key = "embeddingstore", storeWithCode = true)
-  private EmbeddingStore embeddingStore;
 
   /** Embedding model type */
   @HopMetadataProperty(key = "llmodel", injectionKey = "llmodel", injectionKeyDescription = "SemanticSearchMeta.Injection.llmodel")
@@ -95,22 +90,13 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   @HopMetadataProperty(groupKey = "lookup", key = "value")
   private List<SLookupValue> lookupValues;
 
-  @HopMetadataProperty(key = "neo4jConnection", injectionKey = "neo4jConnection", injectionKeyDescription = "SemanticSearchMeta.Injection.connection")
-  private String neo4JConnectionName;
-
-  @HopMetadataProperty(key = "chromaurl")
-  private String chromaUrl;
-
   public SemanticSearchMeta() {
     super();
-    this.setEmbeddingStore(EmbeddingStore.IN_MEMORY);
     this.lookupValues = new ArrayList<>();
   }
 
   public SemanticSearchMeta(SemanticSearchMeta m) {
     this();
-    this.setNeo4JConnectionName(m.getNeo4JConnectionName());
-    this.setEmbeddingStore(m.getEmbeddingStore());
     this.setLlModelName(m.getLlModelName());
     this.lookupTextField = m.lookupTextField;
     this.setLookupKeyField(m.getLookupKeyField());
@@ -129,9 +115,7 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
 
   @Override
   public void setDefault() {
-    setEmbeddingStore(EmbeddingStore.IN_MEMORY);
     setLlModelName(null);
-    setNeo4JConnectionName(null);
     lookupTextField = null;
     setLookupKeyField(null);
     mainStreamField = null;

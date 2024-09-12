@@ -28,9 +28,7 @@ import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.langchain4j.EmbeddingStore;
 import org.apache.hop.langchain4j.LlmMeta;
-import org.apache.hop.neo4j.shared.NeoConnection;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.ITransformDialog;
 import org.apache.hop.pipeline.transform.TransformMeta;
@@ -69,9 +67,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
 
   private CCombo wTransform;
 
-  private CCombo wStore;
-  private TextVar wChromaUrl;
-
   private ComboVar wMainStreamField;
 
   private ComboVar wLookupTextField;
@@ -88,8 +83,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
   private MetaSelectionLine<LlmMeta> wLlmModel;
 
   private Button wGetLookup;
-
-  private MetaSelectionLine<NeoConnection> wNeo4JConnection;
 
   private final SemanticSearchMeta input;
   private boolean gotPreviousFields = false;
@@ -255,7 +248,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     FormData fdLlm = new FormData();
     fdLlm.left = new FormAttachment(0, 0);
     fdLlm.right = new FormAttachment(100, 0);
-    fdLlm.top = new FormAttachment(wStore, margin);
     wLlmModel.setLayoutData(fdLlm);
     try {
       wLlmModel.fillItems();
@@ -275,59 +267,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     // ///////////////////////////////////////////////////////////
     // / END OF Model TAB
     // //////////////////////////////////////////////////////////
-
-    // ////////////////////////
-    // START OF Storage TAB ///
-    // ////////////////////////
-    tabItems = generateTab(wTabFolder, BaseMessages.getString(PKG, "SemanticSearchDialog.Store.Tab"));
-    Composite wStoreComp = tabItems.getLeft();
-    CTabItem wStoreTab = tabItems.getRight();
-
-    // /////////////////////////////////
-    // START OF Settings Fields GROUP
-    // /////////////////////////////////
-
-    Group wStoreGroup = generateGroup(wStoreComp,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
-
-    // Storage
-    wStore = generateCCombo(middle, margin, wSettingsGroup, wStoreGroup,
-        EmbeddingStore.getDescriptions(), e -> activeStore(),
-        BaseMessages.getString(PKG, "SemanticSearchDialog.Model.Label"));
-
-    wNeo4JConnection = new MetaSelectionLine<>(variables, metadataProvider, NeoConnection.class,
-        wStoreGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.neo4j.Label"),
-        BaseMessages.getString(PKG, "SemanticSearchDialog.neo4j.Tooltip"));
-
-    PropsUi.setLook(wNeo4JConnection);
-    FormData fdConnection = new FormData();
-    fdConnection.left = new FormAttachment(0, 0);
-    fdConnection.right = new FormAttachment(100, 0);
-    fdConnection.top = new FormAttachment(wStore, margin);
-    wNeo4JConnection.setLayoutData(fdConnection);
-    try {
-      wNeo4JConnection.fillItems();
-    } catch (Exception e) {
-      new ErrorDialog(shell, "Error", "Error getting list of connections", e);
-    }
-
-    this.wChromaUrl = generateTextVar(middle, margin, wNeo4JConnection, wStoreGroup,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.chroma.Label"),
-        BaseMessages.getString(PKG, "SemanticSearchDialog.chroma.Tooltip"));
-
-    finalizeGroup(margin, wSettingsGroup, wStoreGroup);
-
-    // ///////////////////////////////////////////////////////////
-    // / END OF Settings GROUP
-    // ///////////////////////////////////////////////////////////
-
-    wStoreComp.layout();
-    wStoreTab.setControl(wStoreComp);
-
-    // ///////////////////////////////////////////////////////////
-    // / END OF Storage TAB
-    // ///////////////////////////////////////////////////////////
 
     // ////////////////////////
     // START OF Fields TAB ///
@@ -546,13 +485,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     wDistanceField.setText(Const.NVL(input.getOutputDistanceField(), ""));
 
     wLlmModel.setText(Const.NVL(input.getLlModelName(), ""));
-
-    wStore.setText(Const.NVL(input.getEmbeddingStore().getDescription(),
-        EmbeddingStore.IN_MEMORY.getDescription()));
-    activeStore();
-
-    wNeo4JConnection.setText(Const.NVL(input.getNeo4JConnectionName(), ""));
-    wChromaUrl.setText(Const.NVL(input.getChromaUrl(), ""));
     wMaxValue.setText(Const.NVL(input.getMaximalValue(), "1"));
 
     for (int i = 0; i < input.getLookupValues().size(); i++) {
@@ -576,20 +508,10 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     dispose();
   }
 
-  private void activeStore() {
-    EmbeddingStore store = EmbeddingStore.lookupDescription(wStore.getText());
-
-    wNeo4JConnection.setVisible(store == EmbeddingStore.NEO4J);
-    wChromaUrl.setVisible(store == EmbeddingStore.CHROMA);
-  }
-
   private void ok() {
     if (Utils.isEmpty(wTransformName.getText())) {
       return;
     }
-
-    input.setNeo4JConnectionName(wNeo4JConnection.getText());
-    input.setChromaUrl(wChromaUrl.getText());
 
     input.setMainStreamField(wMainStreamField.getText());
     input.setLookupTransformName(wTransform.getText());
@@ -597,7 +519,6 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     input.setLookupKeyField(wLookupKeyField.getText());
 
     input.setLlModelName(wLlmModel.getText());
-    input.setEmbeddingStore(EmbeddingStore.lookupDescription(wStore.getText()));
     input.setMaximalValue(wMaxValue.getText());
 
     input.setOutputMatchField(wMatchField.getText());
