@@ -142,7 +142,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
 
     ciReturn = new ColumnInfo[2];
     ciReturn[0] = new ColumnInfo(BaseMessages.getString(PKG, "TableExtraction.ColumnInfo.FieldReturn"),
-        ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, false);
+        ColumnInfo.COLUMN_TYPE_TEXT, false);
     ciReturn[1] = new ColumnInfo(
         BaseMessages.getString(PKG, "TableExtraction.ColumnInfo.Type"),
         ColumnInfo.COLUMN_TYPE_CCOMBO,
@@ -150,13 +150,13 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
         false);
 
     wReturn = new TableView(variables, wExtractTable,
-        SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, ciReturn,
+        SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI, ciReturn,
         5, null, props);
 
     FormData fdReturn = new FormData();
     fdReturn.left = new FormAttachment(0, 0);
     fdReturn.top = new FormAttachment(wlReturn, margin);
-    fdReturn.bottom = new FormAttachment(100, -3 * margin);
+    fdReturn.bottom = new FormAttachment(100, 0);
     wReturn.setLayoutData(fdReturn);
 
     GuiUtils.finalizeGroup(margin, previous, wExtractTable);
@@ -233,10 +233,8 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
 
     input.getTargetColumns().clear();
     for (TableItem item : wReturn.getNonEmptyItems()) {
-      TableExtractionMeta.TargetColumn lookupValue = new TableExtractionMeta.TargetColumn();
-      lookupValue.setName(item.getText(1));
-      lookupValue.setType(ValueMetaFactory.getIdForValueMeta(item.getText(2)));
-      input.getTargetColumns().add(lookupValue);
+      input.getTargetColumns().add(
+          new TableExtractionMeta.TargetColumn(item.getText(1), ValueMetaFactory.getIdForValueMeta(item.getText(2))));
     }
 
     transformName = wTransformName.getText(); // return value
