@@ -41,8 +41,10 @@ public class LlmMetaEditor extends MetadataEditor<LlmMeta> {
     private Combo wStorageType;
     private Combo wModelType;
 
+    private GuiCompositeWidgets guiStorageCompositeWidgets;
     private Composite wStorageSpecificComp;
-    private GuiCompositeWidgets guiCompositeWidgets;
+
+    private GuiCompositeWidgets guiModelCompositeWidgets;
     private Composite wModelSpecificComp;
 
     private Map<Class<? extends IStorage>, IStorage> storageMetaMap;
@@ -107,7 +109,7 @@ public class LlmMetaEditor extends MetadataEditor<LlmMeta> {
         busyChangingStorageType.set(true);
         wStorageType.setText(Const.NVL(storageName, InMemoryStorageMeta.NAME));
 
-        guiCompositeWidgets.setWidgetsContents(
+        guiStorageCompositeWidgets.setWidgetsContents(
                 meta.getStorage(),
                 wStorageSpecificComp,
                 LlmMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
@@ -117,7 +119,7 @@ public class LlmMetaEditor extends MetadataEditor<LlmMeta> {
         busyChangingModelType.set(true);
         wModelType.setText(Const.NVL(modelName, OnnxModelMeta.NAME));
 
-        guiCompositeWidgets.setWidgetsContents(
+        guiModelCompositeWidgets.setWidgetsContents(
                 meta.getModel(),
                 wModelSpecificComp,
                 LlmMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
@@ -129,11 +131,11 @@ public class LlmMetaEditor extends MetadataEditor<LlmMeta> {
         meta.setName(wName.getText());
 
         IStorage storage = meta.getStorage();
-        guiCompositeWidgets.getWidgetsContents(storage, LlmMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
+        guiStorageCompositeWidgets.getWidgetsContents(storage, LlmMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
         storageMetaMap.put(storage.getClass(), storage);
 
         IModel model = meta.getModel();
-        guiCompositeWidgets.getWidgetsContents(model, LlmMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
+        guiModelCompositeWidgets.getWidgetsContents(model, LlmMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
         metaMap.put(model.getClass(), model);
     }
 
@@ -205,8 +207,8 @@ public class LlmMetaEditor extends MetadataEditor<LlmMeta> {
 
         // Now add the database plugin specific widgets
         //
-        guiCompositeWidgets = new GuiCompositeWidgets(manager.getVariables());
-        guiCompositeWidgets.createCompositeWidgets(
+        guiStorageCompositeWidgets = new GuiCompositeWidgets(manager.getVariables());
+        guiStorageCompositeWidgets.createCompositeWidgets(
                 metadata.getStorage(),
                 null,
                 wStorageSpecificComp,
@@ -214,7 +216,7 @@ public class LlmMetaEditor extends MetadataEditor<LlmMeta> {
                 null);
 
         // Add listener to detect change
-        guiCompositeWidgets.setWidgetsListener(
+        guiStorageCompositeWidgets.setWidgetsListener(
                 new GuiCompositeWidgetsAdapter() {
                     @Override
                     public void widgetModified(
@@ -262,8 +264,8 @@ public class LlmMetaEditor extends MetadataEditor<LlmMeta> {
 
         // Now add the database plugin specific widgets
         //
-        guiCompositeWidgets = new GuiCompositeWidgets(manager.getVariables());
-        guiCompositeWidgets.createCompositeWidgets(
+        guiModelCompositeWidgets = new GuiCompositeWidgets(manager.getVariables());
+        guiModelCompositeWidgets.createCompositeWidgets(
                 new OnnxModelMeta(),
                 null,
                 wModelSpecificComp,
@@ -271,7 +273,7 @@ public class LlmMetaEditor extends MetadataEditor<LlmMeta> {
                 null);
 
         // Add listener to detect change
-        guiCompositeWidgets.setWidgetsListener(
+        guiModelCompositeWidgets.setWidgetsListener(
                 new GuiCompositeWidgetsAdapter() {
                     @Override
                     public void widgetModified(
@@ -332,14 +334,14 @@ public class LlmMetaEditor extends MetadataEditor<LlmMeta> {
 
         // Re-add the widgets
         //
-        guiCompositeWidgets = new GuiCompositeWidgets(manager.getVariables());
-        guiCompositeWidgets.createCompositeWidgets(
+        guiStorageCompositeWidgets = new GuiCompositeWidgets(manager.getVariables());
+        guiStorageCompositeWidgets.createCompositeWidgets(
                 llmMeta.getStorage(),
                 null,
                 wStorageSpecificComp,
                 LlmMeta.GUI_PLUGIN_ELEMENT_PARENT_ID,
                 null);
-        guiCompositeWidgets.setWidgetsListener(
+        guiStorageCompositeWidgets.setWidgetsListener(
                 new GuiCompositeWidgetsAdapter() {
                     @Override
                     public void widgetModified(
@@ -398,14 +400,14 @@ public class LlmMetaEditor extends MetadataEditor<LlmMeta> {
 
         // Re-add the widgets
         //
-        guiCompositeWidgets = new GuiCompositeWidgets(manager.getVariables());
-        guiCompositeWidgets.createCompositeWidgets(
+        guiModelCompositeWidgets = new GuiCompositeWidgets(manager.getVariables());
+        guiModelCompositeWidgets.createCompositeWidgets(
                 oldModel,
                 null,
                 wModelSpecificComp,
                 LlmMeta.GUI_PLUGIN_ELEMENT_PARENT_ID,
                 null);
-        guiCompositeWidgets.setWidgetsListener(
+        guiModelCompositeWidgets.setWidgetsListener(
                 new GuiCompositeWidgetsAdapter() {
                     @Override
                     public void widgetModified(
