@@ -61,8 +61,6 @@ public class TableExtractionMeta extends BaseTransformMeta<TableExtraction, Tabl
   @InjectionDeep
   private List<TargetColumn> targetColumns;
 
-  private String inputName;
-
   public TableExtractionMeta() {
     super();
     this.targetColumns = new ArrayList<>();
@@ -92,8 +90,6 @@ public class TableExtractionMeta extends BaseTransformMeta<TableExtraction, Tabl
       TransformMeta nextTransform, IVariables variables, IHopMetadataProvider metadataProvider)
       throws HopTransformException {
 
-    inputName = name;
-
     for (TargetColumn targetColumn : targetColumns) {
       IValueMeta v;
       try {
@@ -115,7 +111,7 @@ public class TableExtractionMeta extends BaseTransformMeta<TableExtraction, Tabl
     if (prev != null && prev.size() > 0) {
       cr = new CheckResult(
           ICheckResult.TYPE_RESULT_OK, BaseMessages.getString(PKG,
-              "SemanticSearchMeta.CheckResult.TransformReceivingFields", prev.size() + ""),
+              "TableExtraction.CheckResult.TransformReceivingFields", prev.size() + ""),
           transformMeta);
       remarks.add(cr);
 
@@ -200,16 +196,6 @@ public class TableExtractionMeta extends BaseTransformMeta<TableExtraction, Tabl
     for (IStream stream : infoStreams) {
       stream.setTransformMeta(TransformMeta.findTransform(transforms, stream.getSubject()));
     }
-  }
-
-  @Override
-  public boolean excludeFromRowLayoutVerification() {
-    return true;
-  }
-
-  @Override
-  public boolean supportsErrorHandling() {
-    return true;
   }
 
   @Getter

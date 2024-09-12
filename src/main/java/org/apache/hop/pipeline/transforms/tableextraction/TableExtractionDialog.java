@@ -15,8 +15,6 @@
 
 package org.apache.hop.pipeline.transforms.tableextraction;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.exception.HopException;
@@ -30,8 +28,6 @@ import org.apache.hop.langchain4j.LlmMeta;
 import org.apache.hop.langchain4j.utils.GuiUtils;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.ITransformDialog;
-import org.apache.hop.pipeline.transform.TransformMeta;
-import org.apache.hop.ui.core.ConstUi;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.dialog.BaseDialog;
 import org.apache.hop.ui.core.dialog.ErrorDialog;
@@ -45,6 +41,7 @@ import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
@@ -110,7 +107,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
     fdTransformName.right = new FormAttachment(100, 0);
     wTransformName.setLayoutData(fdTransformName);
 
-    Group wLookupGroup = getWLookupGroup(middle, margin);
+    Group wLookupGroup = getWLookupGroup(wTransformName, middle, margin);
 
     getFdReturn(margin, wLookupGroup);
 
@@ -125,18 +122,17 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
     setButtonPositions(new Button[] { wOk, wCancel }, margin, null);
 
     getData();
-    setComboBoxesLookup();
 
     BaseDialog.defaultShellHandling(shell, c -> ok(), c -> cancel());
 
     return transformName;
   }
 
-  private void getFdReturn(int margin, Group previous) {
+  private void getFdReturn(int margin, Control previous) {
     Group wExtractTable = GuiUtils.generateGroup(shell,
         BaseMessages.getString(PKG, "TableExtraction.Group.ExtractTable.Label"));
 
-    wlReturn = new Label(shell, SWT.NONE);
+    wlReturn = new Label(wExtractTable, SWT.NONE);
     wlReturn.setText(BaseMessages.getString(PKG, "TableExtraction.ReturnFields.Label"));
     PropsUi.setLook(wlReturn);
     FormData fdlReturn = new FormData();
@@ -153,9 +149,9 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
         ValueMetaFactory.getAllValueMetaNames(),
         false);
 
-    wReturn = new TableView(variables, shell,
+    wReturn = new TableView(variables, wExtractTable,
         SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, ciReturn,
-        1, null, props);
+        5, null, props);
 
     FormData fdReturn = new FormData();
     fdReturn.left = new FormAttachment(0, 0);
@@ -166,19 +162,19 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
     GuiUtils.finalizeGroup(margin, previous, wExtractTable);
   }
 
-  private Group getWLookupGroup(int middle, int margin) {
+  private Group getWLookupGroup(Control previous, int middle, int margin) {
     Group wLookupGroup = GuiUtils.generateGroup(shell,
         BaseMessages.getString(PKG, "TableExtraction.Group.Settings.Label"));
 
     // LookupFields
-    wTextField = GuiUtils.generateCombVar(middle, margin, null, wLookupGroup,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.wlLookupTextField.Label"),
+    wTextField = GuiUtils.generateCombVar(middle, margin, previous, wLookupGroup,
+        BaseMessages.getString(PKG, "TableExtraction.wTextField.Label"),
         e -> setLookupTextField(), variables);
 
     // Model
     wLlmModel = new MetaSelectionLine<>(variables, metadataProvider,
         LlmMeta.class,
-        shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER,
+        wLookupGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER,
         BaseMessages.getString(PKG, "TableExtraction.llmodel.Label"),
         BaseMessages.getString(PKG, "TableExtraction.llmodel.Tooltip"));
 
@@ -254,7 +250,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
       try {
         wTextField.removeAll();
 
-        IRowMeta r = pipelineMeta.getTransformFields(variables, input.getInputName());
+        IRowMeta r = pipelineMeta.getPrevTransformFields(variables, transformName);
         if (r != null) {
           String[] stringTypeFieldNames = r.getValueMetaList().stream()
               .filter(meta -> meta.getType() == IValueMeta.TYPE_STRING)
@@ -273,33 +269,5 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
       }
       gotTextFields = true;
     }
-  }
-
-  protected void setComboBoxesLookup() {
-    Runnable fieldLoader = () -> {
-      TransformMeta lookupTransformMeta = pipelineMeta.findTransform(input.getInputName());
-      if (lookupTransformMeta != null) {
-        try {
-          IRowMeta row = pipelineMeta.getTransformFields(variables, lookupTransformMeta);
-          List<String> lookupFields = new ArrayList<>();
-          // Remember these fields...
-          for (int i = 0; i < row.size(); i++) {
-            lookupFields.add(row.getValueMeta(i).getName());
-          }
-
-          // Something was changed in the row.
-          //
-          String[] fieldNames = ConstUi.sortFieldNames(lookupFields);
-          // return fields
-          ciReturn[0].setComboValues(fieldNames);
-
-          gotTextFields = false;
-        } catch (HopException e) {
-          logError("It was not possible to retrieve the list of fields for transform ["
-              + input.getInputName() + "]!");
-        }
-      }
-    };
-    shell.getDisplay().asyncExec(fieldLoader);
   }
 }
