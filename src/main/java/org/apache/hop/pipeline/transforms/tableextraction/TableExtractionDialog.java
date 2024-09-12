@@ -31,7 +31,6 @@ import org.apache.hop.langchain4j.utils.GuiUtils;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.ITransformDialog;
 import org.apache.hop.pipeline.transform.TransformMeta;
-import org.apache.hop.pipeline.transform.stream.IStream;
 import org.apache.hop.ui.core.ConstUi;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.dialog.BaseDialog;
@@ -42,7 +41,6 @@ import org.apache.hop.ui.core.widget.MetaSelectionLine;
 import org.apache.hop.ui.core.widget.TableView;
 import org.apache.hop.ui.pipeline.transform.BaseTransformDialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
@@ -55,8 +53,6 @@ import org.eclipse.swt.widgets.Text;
 
 public class TableExtractionDialog extends BaseTransformDialog implements ITransformDialog {
   private static final Class<?> PKG = TableExtractionMeta.class; // For Translator
-
-  private CCombo wTransform;
 
   private ComboVar wTextField;
 
@@ -90,7 +86,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
     formLayout.marginHeight = PropsUi.getFormMargin();
 
     shell.setLayout(formLayout);
-    shell.setText(BaseMessages.getString(PKG, "SemanticSearchDialog.Shell.Title"));
+    shell.setText(BaseMessages.getString(PKG, "TableExtraction.Shell.Title"));
 
     int middle = props.getMiddlePct();
     int margin = PropsUi.getMargin();
@@ -98,7 +94,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
     // TransformName line
     wlTransformName = new Label(shell, SWT.RIGHT);
     wlTransformName
-        .setText(BaseMessages.getString(PKG, "SemanticSearchDialog.TransformName.Label"));
+        .setText(BaseMessages.getString(PKG, "TableExtraction.TransformName.Label"));
     PropsUi.setLook(wlTransformName);
     fdlTransformName = new FormData();
     fdlTransformName.left = new FormAttachment(0, 0);
@@ -116,9 +112,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
 
     Group wLookupGroup = getWLookupGroup(middle, margin);
 
-    Group wLlmGroup = getFdLlm(margin, wLookupGroup);
-
-    getFdReturn(margin, wLlmGroup);
+    getFdReturn(margin, wLookupGroup);
 
     // The buttons go at the bottom
     //
@@ -138,23 +132,23 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
     return transformName;
   }
 
-  private void getFdReturn(int margin, Group wLlmGroup) {
+  private void getFdReturn(int margin, Group previous) {
     Group wExtractTable = GuiUtils.generateGroup(shell,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
+        BaseMessages.getString(PKG, "TableExtraction.Group.ExtractTable.Label"));
 
     wlReturn = new Label(shell, SWT.NONE);
-    wlReturn.setText(BaseMessages.getString(PKG, "SemanticSearchDialog.ReturnFields.Label"));
+    wlReturn.setText(BaseMessages.getString(PKG, "TableExtraction.ReturnFields.Label"));
     PropsUi.setLook(wlReturn);
     FormData fdlReturn = new FormData();
     fdlReturn.left = new FormAttachment(0, 0);
-    fdlReturn.top = new FormAttachment(wLlmModel, margin);
+    fdlReturn.top = new FormAttachment(previous, margin);
     wlReturn.setLayoutData(fdlReturn);
 
     ciReturn = new ColumnInfo[2];
-    ciReturn[0] = new ColumnInfo(BaseMessages.getString(PKG, "SemanticSearchDialog.ColumnInfo.FieldReturn"),
+    ciReturn[0] = new ColumnInfo(BaseMessages.getString(PKG, "TableExtraction.ColumnInfo.FieldReturn"),
         ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, false);
     ciReturn[1] = new ColumnInfo(
-        BaseMessages.getString(PKG, "SelectValuesDialog.ColumnInfo.Type"),
+        BaseMessages.getString(PKG, "TableExtraction.ColumnInfo.Type"),
         ColumnInfo.COLUMN_TYPE_CCOMBO,
         ValueMetaFactory.getAllValueMetaNames(),
         false);
@@ -169,19 +163,24 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
     fdReturn.bottom = new FormAttachment(100, -3 * margin);
     wReturn.setLayoutData(fdReturn);
 
-    GuiUtils.finalizeGroup(margin, wLlmGroup, wExtractTable);
+    GuiUtils.finalizeGroup(margin, previous, wExtractTable);
   }
 
-  private Group getFdLlm(int margin, Group wLookupGroup) {
-    Group wLlmGroup = GuiUtils.generateGroup(shell,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
+  private Group getWLookupGroup(int middle, int margin) {
+    Group wLookupGroup = GuiUtils.generateGroup(shell,
+        BaseMessages.getString(PKG, "TableExtraction.Group.Settings.Label"));
+
+    // LookupFields
+    wTextField = GuiUtils.generateCombVar(middle, margin, null, wLookupGroup,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.wlLookupTextField.Label"),
+        e -> setLookupTextField(), variables);
 
     // Model
     wLlmModel = new MetaSelectionLine<>(variables, metadataProvider,
         LlmMeta.class,
         shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.llmodel.Label"),
-        BaseMessages.getString(PKG, "SemanticSearchDialog.llmodel.Tooltip"));
+        BaseMessages.getString(PKG, "TableExtraction.llmodel.Label"),
+        BaseMessages.getString(PKG, "TableExtraction.llmodel.Tooltip"));
 
     PropsUi.setLook(wLlmModel);
     FormData fdLlm = new FormData();
@@ -194,19 +193,6 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
     } catch (Exception e) {
       new ErrorDialog(shell, "Error", "Error getting list of models", e);
     }
-
-    GuiUtils.finalizeGroup(margin, wLookupGroup, wLlmGroup);
-    return wLlmGroup;
-  }
-
-  private Group getWLookupGroup(int middle, int margin) {
-    Group wLookupGroup = GuiUtils.generateGroup(shell,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
-
-    // LookupFields
-    wTextField = GuiUtils.generateCombVar(middle, margin, null, wLookupGroup,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.wlLookupTextField.Label"),
-        e -> setLookupTextField(), variables);
 
     GuiUtils.finalizeGroup(margin, wTransformName, wLookupGroup);
     return wLookupGroup;
@@ -228,9 +214,6 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
       item.setText(1, Const.NVL(targetColumn.getName(), ""));
       item.setText(2, ValueMetaFactory.getValueMetaName(targetColumn.getType()));
     }
-
-    IStream infoStream = input.getTransformIOMeta().getInfoStreams().get(0);
-    wTransform.setText(Const.NVL(infoStream.getTransformName(), ""));
 
     wReturn.optimizeTableView();
 
@@ -271,7 +254,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
       try {
         wTextField.removeAll();
 
-        IRowMeta r = pipelineMeta.getTransformFields(variables, wTransform.getText());
+        IRowMeta r = pipelineMeta.getTransformFields(variables, input.getInputName());
         if (r != null) {
           String[] stringTypeFieldNames = r.getValueMetaList().stream()
               .filter(meta -> meta.getType() == IValueMeta.TYPE_STRING)
@@ -294,7 +277,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
 
   protected void setComboBoxesLookup() {
     Runnable fieldLoader = () -> {
-      TransformMeta lookupTransformMeta = pipelineMeta.findTransform(wTransform.getText());
+      TransformMeta lookupTransformMeta = pipelineMeta.findTransform(input.getInputName());
       if (lookupTransformMeta != null) {
         try {
           IRowMeta row = pipelineMeta.getTransformFields(variables, lookupTransformMeta);
@@ -313,7 +296,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
           gotTextFields = false;
         } catch (HopException e) {
           logError("It was not possible to retrieve the list of fields for transform ["
-              + wTransform.getText() + "]!");
+              + input.getInputName() + "]!");
         }
       }
     };
