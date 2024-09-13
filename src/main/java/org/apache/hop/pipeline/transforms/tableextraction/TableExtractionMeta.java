@@ -50,8 +50,8 @@ public class TableExtractionMeta extends BaseTransformMeta<TableExtraction, Tabl
   private static final Class<?> PKG = TableExtractionMeta.class; // For Translator
 
   /** Embedding model type */
-  @HopMetadataProperty(key = "llmodel", injectionKey = "llmodel", injectionKeyDescription = "TableExtraction.Injection.llmodel")
-  private String llModelName;
+  @HopMetadataProperty(key = "languagemodel", injectionKey = "languagemodel", injectionKeyDescription = "TableExtraction.Injection.languagemodel")
+  private String languageModelName;
 
   /** field in input stream which to extract data from */
   @HopMetadataProperty(key = "textfield")
@@ -69,7 +69,7 @@ public class TableExtractionMeta extends BaseTransformMeta<TableExtraction, Tabl
 
   public TableExtractionMeta(TableExtractionMeta m) {
     this();
-    this.setLlModelName(m.getLlModelName());
+    this.setLanguageModelName(m.getLanguageModelName());
     this.textField = m.textField;
     m.targetColumns.forEach(v -> this.targetColumns.add(new TargetColumn(v)));
   }
@@ -81,7 +81,7 @@ public class TableExtractionMeta extends BaseTransformMeta<TableExtraction, Tabl
 
   @Override
   public void setDefault() {
-    setLlModelName(null);
+    setLanguageModelName(null);
     textField = null;
     targetColumns.clear();
   }

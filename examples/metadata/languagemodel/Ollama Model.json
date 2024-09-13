@@ -1,0 +1,11 @@
+{
+  "name": "Ollama Model",
+  "model": {
+    "Ollama Model": {
+      "modelName": "llama3.1",
+      "protocol": "http",
+      "port": "11434",
+      "host": "localhost"
+    }
+  }
+}

@@ -24,7 +24,7 @@ import org.apache.hop.core.row.value.ValueMetaFactory;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.langchain4j.LlmMeta;
+import org.apache.hop.langchain4j.languagemodels.LanguageModelMeta;
 import org.apache.hop.langchain4j.utils.GuiUtils;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.ITransformDialog;
@@ -61,7 +61,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
   private Label wlReturn;
   private TableView wOutput;
 
-  private MetaSelectionLine<LlmMeta> wLlmModel;
+  private MetaSelectionLine<LanguageModelMeta> wLlmModel;
 
   private final TableExtractionMeta input;
   private boolean gotTextFields = false;
@@ -184,7 +184,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
 
     // Model
     wLlmModel = new MetaSelectionLine<>(variables, metadataProvider,
-        LlmMeta.class,
+        LanguageModelMeta.class,
         wLookupGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER,
         BaseMessages.getString(PKG, "TableExtraction.llmodel.Label"),
         BaseMessages.getString(PKG, "TableExtraction.llmodel.Tooltip"));
@@ -213,7 +213,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
 
     wTextField.setText(Const.NVL(input.getTextField(), ""));
 
-    wLlmModel.setText(Const.NVL(input.getLlModelName(), ""));
+    wLlmModel.setText(Const.NVL(input.getLanguageModelName(), ""));
 
     for (int i = 0; i < input.getTargetColumns().size(); i++) {
       TableExtractionMeta.TargetColumn targetColumn = input.getTargetColumns().get(i);
@@ -240,7 +240,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
 
     input.setTextField(wTextField.getText());
 
-    input.setLlModelName(wLlmModel.getText());
+    input.setLanguageModelName(wLlmModel.getText());
 
     input.getTargetColumns().clear();
     for (TableItem item : wOutput.getNonEmptyItems()) {

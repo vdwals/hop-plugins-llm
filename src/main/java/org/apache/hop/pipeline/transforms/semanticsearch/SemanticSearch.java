@@ -33,7 +33,8 @@ import org.apache.hop.core.row.RowDataUtil;
 import org.apache.hop.core.row.RowMeta;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.langchain4j.LlmMeta;
+import org.apache.hop.langchain4j.embeddingmodels.EmbeddingModelMeta;
+import org.apache.hop.langchain4j.embeddingstores.EmbeddingStoreMeta;
 import org.apache.hop.pipeline.Pipeline;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransform;
@@ -382,22 +383,31 @@ public class SemanticSearch extends BaseTransform<SemanticSearchMeta, SemanticSe
 
     data.maxResults = Const.toInt(resolve(meta.getMaximalValue()), 1);
 
-    if (Utils.isEmpty(meta.getLlModelName())) {
+    if (Utils.isEmpty(meta.getEmbeddingModelName())) {
       logError(BaseMessages.getString(PKG, "SemanticSearch.Error.llModelMissing"));
       return false;
     }
     try {
-      LlmMeta modelMeta = metadataProvider.getSerializer(LlmMeta.class).load(resolve(meta.getLlModelName()));
+      EmbeddingModelMeta modelMeta = metadataProvider.getSerializer(EmbeddingModelMeta.class)
+          .load(resolve(meta.getEmbeddingModelName()));
 
       data.embeddingModel = modelMeta.getEmbeddingModel(metadataProvider, log, this);
-      data.embeddingStore = modelMeta.getEmbeddingStorage(metadataProvider, log, this);
     } catch (Exception e) {
-      log.logError("Could not get LL-Model '"
-          + resolve(meta.getLlModelName()) + "' from the metastore", e);
+      log.logError("Could not get Embedding Model '"
+          + resolve(meta.getEmbeddingModelName()) + "' from the metastore", e);
       return false;
     }
 
-    
+    try {
+      EmbeddingStoreMeta storeMeta = metadataProvider.getSerializer(EmbeddingStoreMeta.class)
+          .load(resolve(meta.getEmbeddingStoreName()));
+
+      data.embeddingStore = storeMeta.getEmbeddingStore(metadataProvider, log, this);
+    } catch (Exception e) {
+      log.logError("Could not get Embedding Store '"
+          + resolve(meta.getEmbeddingStoreName()) + "' from the metastore", e);
+      return false;
+    }
     return true;
   }
 

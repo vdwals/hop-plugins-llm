@@ -52,8 +52,12 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
   private static final Class<?> PKG = SemanticSearchMeta.class; // For Translator
 
   /** Embedding model type */
-  @HopMetadataProperty(key = "llmodel", injectionKey = "llmodel", injectionKeyDescription = "SemanticSearchMeta.Injection.llmodel")
-  private String llModelName;
+  @HopMetadataProperty(key = "embeddingmodel", injectionKey = "embeddingmodel", injectionKeyDescription = "SemanticSearchMeta.Injection.embeddingmodel")
+  private String embeddingModelName;
+
+  /** Embedding store type */
+  @HopMetadataProperty(key = "embeddingstore", injectionKey = "embeddingstore", injectionKeyDescription = "SemanticSearchMeta.Injection.embeddingstore")
+  private String embeddingStoreName;
 
   @HopMetadataProperty(key = "from")
   private String lookupTransformName;
@@ -97,7 +101,7 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
 
   public SemanticSearchMeta(SemanticSearchMeta m) {
     this();
-    this.setLlModelName(m.getLlModelName());
+    this.setEmbeddingModelName(m.getEmbeddingModelName());
     this.lookupTextField = m.lookupTextField;
     this.setLookupKeyField(m.getLookupKeyField());
     this.mainStreamField = m.mainStreamField;
@@ -115,7 +119,7 @@ public class SemanticSearchMeta extends BaseTransformMeta<SemanticSearch, Semant
 
   @Override
   public void setDefault() {
-    setLlModelName(null);
+    setEmbeddingModelName(null);
     lookupTextField = null;
     setLookupKeyField(null);
     mainStreamField = null;

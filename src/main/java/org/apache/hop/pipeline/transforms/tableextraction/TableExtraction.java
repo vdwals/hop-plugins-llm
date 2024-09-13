@@ -20,7 +20,7 @@ import java.util.Collections;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.langchain4j.LlmMeta;
+import org.apache.hop.langchain4j.languagemodels.LanguageModelMeta;
 import org.apache.hop.pipeline.Pipeline;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransform;
@@ -98,16 +98,18 @@ public class TableExtraction extends BaseTransform<TableExtractionMeta, TableExt
       return false;
     }
 
-    if (Utils.isEmpty(meta.getLlModelName())) {
+    if (Utils.isEmpty(meta.getLanguageModelName())) {
       logError(BaseMessages.getString(PKG, "SemanticSearch.Error.llModelMissing"));
       return false;
     }
     try {
-      LlmMeta modelMeta = metadataProvider.getSerializer(LlmMeta.class).load(resolve(meta.getLlModelName()));
+      LanguageModelMeta modelMeta = metadataProvider.getSerializer(LanguageModelMeta.class)
+          .load(resolve(meta.getLanguageModelName()));
 
+      data.chatModel = modelMeta.getChatModel(metadataProvider, log, variables);
     } catch (Exception e) {
       log.logError("Could not get LL-Model '"
-          + resolve(meta.getLlModelName()) + "' from the metastore", e);
+          + resolve(meta.getLanguageModelName()) + "' from the metastore", e);
       return false;
     }
 

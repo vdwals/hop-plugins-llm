@@ -37,7 +37,7 @@
       <method>none</method>
       <schema_name/>
     </partitioning>
-    <llmodel>Local Model</llmodel>
+    <languagemodel>Ollama Model</languagemodel>
     <targetColumns>
       <description>The first name of Persons in the Text</description>
       <format/>

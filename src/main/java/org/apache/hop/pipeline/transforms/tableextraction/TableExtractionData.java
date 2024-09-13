@@ -21,6 +21,8 @@ import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.pipeline.transform.BaseTransformData;
 import org.apache.hop.pipeline.transform.stream.IStream;
 
+import dev.langchain4j.model.chat.ChatLanguageModel;
+
 public class TableExtractionData extends BaseTransformData {
   public IRowMeta previousRowMeta;
   public IRowMeta outputRowMeta;
@@ -31,6 +33,8 @@ public class TableExtractionData extends BaseTransformData {
   public IRowMeta infoMeta;
 
   public IStream infoStream;
+
+  public ChatLanguageModel chatModel;
 
   public TableExtractionData() {
     super();

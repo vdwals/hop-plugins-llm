@@ -28,7 +28,8 @@ import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.langchain4j.LlmMeta;
+import org.apache.hop.langchain4j.embeddingmodels.EmbeddingModelMeta;
+import org.apache.hop.langchain4j.embeddingstores.EmbeddingStoreMeta;
 import org.apache.hop.langchain4j.utils.GuiUtils;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.ITransformDialog;
@@ -81,7 +82,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
   private TextVar wKeyField;
   private TextVar wMaxValue;
 
-  private MetaSelectionLine<LlmMeta> wLlmModel;
+  private MetaSelectionLine<EmbeddingModelMeta> wEmbeddingModelMeta;
+  private MetaSelectionLine<EmbeddingStoreMeta> wEmbeddingStoreMeta;
 
   private Button wGetLookup;
 
@@ -235,26 +237,44 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
         BaseMessages.getString(PKG, "SemanticSearchDialog.Group.SettingsGroup.Label"));
 
     // Model
-    wLlmModel = new MetaSelectionLine<>(variables, metadataProvider,
-        LlmMeta.class,
+    wEmbeddingModelMeta = new MetaSelectionLine<>(variables, metadataProvider,
+        EmbeddingModelMeta.class,
         wSettingsGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER,
         BaseMessages.getString(PKG, "SemanticSearchDialog.llmodel.Label"),
         BaseMessages.getString(PKG, "SemanticSearchDialog.llmodel.Tooltip"));
 
-    this.wMaxValue = generateTextVar(middle, margin, wLlmModel, wSettingsGroup,
-        BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Label"),
-        BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Tooltip"));
-
-    PropsUi.setLook(wLlmModel);
+    PropsUi.setLook(wEmbeddingModelMeta);
     FormData fdLlm = new FormData();
     fdLlm.left = new FormAttachment(0, 0);
     fdLlm.right = new FormAttachment(100, 0);
-    wLlmModel.setLayoutData(fdLlm);
+    wEmbeddingModelMeta.setLayoutData(fdLlm);
     try {
-      wLlmModel.fillItems();
+      wEmbeddingModelMeta.fillItems();
     } catch (Exception e) {
       new ErrorDialog(shell, "Error", "Error getting list of models", e);
     }
+
+    // Store
+    wEmbeddingStoreMeta = new MetaSelectionLine<>(variables, metadataProvider,
+        EmbeddingStoreMeta.class,
+        wSettingsGroup, SWT.SINGLE | SWT.LEFT | SWT.BORDER,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.llmodel.Label"),
+        BaseMessages.getString(PKG, "SemanticSearchDialog.llmodel.Tooltip"));
+
+    FormData fdStorage = new FormData();
+    fdStorage.left = new FormAttachment(0, 0);
+    fdStorage.right = new FormAttachment(100, 0);
+    fdStorage.top = new FormAttachment(wEmbeddingModelMeta, margin);
+    wEmbeddingStoreMeta.setLayoutData(fdStorage);
+    try {
+      wEmbeddingStoreMeta.fillItems();
+    } catch (Exception e) {
+      new ErrorDialog(shell, "Error", "Error getting list of models", e);
+    }
+
+    this.wMaxValue = generateTextVar(middle, margin, wEmbeddingStoreMeta, wSettingsGroup,
+        BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Label"),
+        BaseMessages.getString(PKG, "SemanticSearchDialog.maxValue.Tooltip"));
 
     GuiUtils.finalizeGroup(margin, wMainStreamGroup, wSettingsGroup, null);
 
@@ -436,7 +456,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     wMaxValue.setText(Const.NVL(input.getMaximalValue(), ""));
     wDistanceField.setText(Const.NVL(input.getOutputDistanceField(), ""));
 
-    wLlmModel.setText(Const.NVL(input.getLlModelName(), ""));
+    wEmbeddingModelMeta.setText(Const.NVL(input.getEmbeddingModelName(), ""));
+    wEmbeddingStoreMeta.setText(Const.NVL(input.getEmbeddingStoreName(), ""));
     wMaxValue.setText(Const.NVL(input.getMaximalValue(), "1"));
 
     for (int i = 0; i < input.getLookupValues().size(); i++) {
@@ -470,7 +491,8 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     input.setLookupTextField(wLookupTextField.getText());
     input.setLookupKeyField(wLookupKeyField.getText());
 
-    input.setLlModelName(wLlmModel.getText());
+    input.setEmbeddingModelName(wEmbeddingModelMeta.getText());
+    input.setEmbeddingStoreName(wEmbeddingStoreMeta.getText());
     input.setMaximalValue(wMaxValue.getText());
 
     input.setOutputMatchField(wMatchField.getText());
