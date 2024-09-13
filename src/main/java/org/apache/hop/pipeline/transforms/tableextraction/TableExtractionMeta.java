@@ -59,6 +59,7 @@ public class TableExtractionMeta extends BaseTransformMeta<TableExtraction, Tabl
 
   /** return these field values from lookup */
   @InjectionDeep
+  @HopMetadataProperty(key = "targetColumns")
   private List<TargetColumn> targetColumns;
 
   public TableExtractionMeta() {
@@ -206,8 +207,14 @@ public class TableExtractionMeta extends BaseTransformMeta<TableExtraction, Tabl
     @HopMetadataProperty(key = "name")
     private String name;
 
+    @HopMetadataProperty(key = "description")
+    private String description;
+
     @HopMetadataProperty(key = "type")
     private int type;
+
+    @HopMetadataProperty(key = "format")
+    private String format;
 
     public TargetColumn(TargetColumn v) {
       this.name = v.name;

@@ -49,13 +49,17 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 
 public class TableExtractionDialog extends BaseTransformDialog implements ITransformDialog {
+  private static final int INDEX_FIELD_NAME = 1;
+  private static final int INDEX_TYPE = 3;
+  private static final int INDEX_DESCRIPTION = 2;
+  private static final int INDEX_FORMAT_FIELD = 4;
+
   private static final Class<?> PKG = TableExtractionMeta.class; // For Translator
 
   private ComboVar wTextField;
 
-  private ColumnInfo[] ciReturn;
   private Label wlReturn;
-  private TableView wReturn;
+  private TableView wOutput;
 
   private MetaSelectionLine<LlmMeta> wLlmModel;
 
@@ -140,26 +144,33 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
     fdlReturn.top = new FormAttachment(previous, margin);
     wlReturn.setLayoutData(fdlReturn);
 
-    ciReturn = new ColumnInfo[2];
-    ciReturn[0] = new ColumnInfo(BaseMessages.getString(PKG, "TableExtraction.ColumnInfo.FieldReturn"),
-        ColumnInfo.COLUMN_TYPE_TEXT, false);
-    ciReturn[1] = new ColumnInfo(
-        BaseMessages.getString(PKG, "TableExtraction.ColumnInfo.Type"),
-        ColumnInfo.COLUMN_TYPE_CCOMBO,
-        ValueMetaFactory.getAllValueMetaNames(),
-        false);
+    ColumnInfo[] colmeta = new ColumnInfo[] {
+        new ColumnInfo(BaseMessages.getString(PKG, "TableExtraction.ColumnInfo.FieldReturn"),
+            ColumnInfo.COLUMN_TYPE_TEXT, false),
+        new ColumnInfo(BaseMessages.getString(PKG, "TableExtraction.ColumnInfo.Description"),
+            ColumnInfo.COLUMN_TYPE_TEXT, false),
+        new ColumnInfo(
+            BaseMessages.getString(PKG, "TableExtraction.ColumnInfo.Type"),
+            ColumnInfo.COLUMN_TYPE_CCOMBO,
+            ValueMetaFactory.getAllValueMetaNames(),
+            false),
+        new ColumnInfo(
+            BaseMessages.getString(PKG, "SelectValuesDialog.ColumnInfo.Format"),
+            ColumnInfo.COLUMN_TYPE_FORMAT,
+            3),
+    };
 
-    wReturn = new TableView(variables, wExtractTable,
-        SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI, ciReturn,
-        5, null, props);
+    wOutput = new TableView(variables, wExtractTable,
+        SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI, colmeta,
+        15, null, props);
 
     FormData fdReturn = new FormData();
     fdReturn.left = new FormAttachment(0, 0);
     fdReturn.top = new FormAttachment(wlReturn, margin);
-    fdReturn.bottom = new FormAttachment(100, 0);
-    wReturn.setLayoutData(fdReturn);
+    fdReturn.bottom = new FormAttachment(100, -2 * margin);
+    wOutput.setLayoutData(fdReturn);
 
-    GuiUtils.finalizeGroup(margin, previous, wExtractTable);
+    GuiUtils.finalizeGroup(margin, previous, wExtractTable, wOk);
   }
 
   private Group getWLookupGroup(Control previous, int middle, int margin) {
@@ -190,7 +201,7 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
       new ErrorDialog(shell, "Error", "Error getting list of models", e);
     }
 
-    GuiUtils.finalizeGroup(margin, wTransformName, wLookupGroup);
+    GuiUtils.finalizeGroup(margin, wTransformName, wLookupGroup, null);
     return wLookupGroup;
   }
 
@@ -206,12 +217,12 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
 
     for (int i = 0; i < input.getTargetColumns().size(); i++) {
       TableExtractionMeta.TargetColumn targetColumn = input.getTargetColumns().get(i);
-      TableItem item = wReturn.table.getItem(i);
-      item.setText(1, Const.NVL(targetColumn.getName(), ""));
-      item.setText(2, ValueMetaFactory.getValueMetaName(targetColumn.getType()));
+      TableItem item = wOutput.table.getItem(i);
+      item.setText(INDEX_FIELD_NAME, Const.NVL(targetColumn.getName(), ""));
+      item.setText(INDEX_DESCRIPTION, Const.NVL(targetColumn.getDescription(), ""));
+      item.setText(INDEX_TYPE, ValueMetaFactory.getValueMetaName(targetColumn.getType()));
+      item.setText(INDEX_FORMAT_FIELD, Const.NVL(targetColumn.getFormat(), ""));
     }
-
-    wReturn.optimizeTableView();
 
     wTransformName.selectAll();
     wTransformName.setFocus();
@@ -232,9 +243,11 @@ public class TableExtractionDialog extends BaseTransformDialog implements ITrans
     input.setLlModelName(wLlmModel.getText());
 
     input.getTargetColumns().clear();
-    for (TableItem item : wReturn.getNonEmptyItems()) {
+    for (TableItem item : wOutput.getNonEmptyItems()) {
       input.getTargetColumns().add(
-          new TableExtractionMeta.TargetColumn(item.getText(1), ValueMetaFactory.getIdForValueMeta(item.getText(2))));
+          new TableExtractionMeta.TargetColumn(item.getText(INDEX_FIELD_NAME), item.getText(INDEX_DESCRIPTION),
+              ValueMetaFactory.getIdForValueMeta(item.getText(INDEX_TYPE)),
+              item.getText(INDEX_FORMAT_FIELD)));
     }
 
     transformName = wTransformName.getText(); // return value

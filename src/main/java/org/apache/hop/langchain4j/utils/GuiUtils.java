@@ -56,11 +56,13 @@ public final class GuiUtils {
         return wSettingsGroup;
     }
 
-    public static void finalizeGroup(int margin, Control cPreviousControl, Group wGroup) {
-        FormData fdSettingsGroup = new FormData();
-        fdSettingsGroup.left = new FormAttachment(0, margin);
-        fdSettingsGroup.top = new FormAttachment(cPreviousControl, margin);
-        fdSettingsGroup.right = new FormAttachment(100, -margin);
-        wGroup.setLayoutData(fdSettingsGroup);
+    public static void finalizeGroup(int margin, Control cPreviousControl, Group wGroup, Control cNextControl) {
+        FormData fdGroup = new FormData();
+        fdGroup.left = new FormAttachment(0, margin);
+        fdGroup.top = new FormAttachment(cPreviousControl, margin);
+        fdGroup.right = new FormAttachment(100, -margin);
+        if (cNextControl != null)
+            fdGroup.bottom = new FormAttachment(cNextControl, -2 * margin);
+        wGroup.setLayoutData(fdGroup);
     }
 }

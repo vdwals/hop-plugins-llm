@@ -38,6 +38,30 @@
       <schema_name/>
     </partitioning>
     <llmodel>Local Model</llmodel>
+    <targetColumns>
+      <description>The first name of Persons in the Text</description>
+      <format/>
+      <name>Firstname</name>
+      <type>2</type>
+    </targetColumns>
+    <targetColumns>
+      <description>The last name of Persons in the Text</description>
+      <format/>
+      <name>Lastname</name>
+      <type>2</type>
+    </targetColumns>
+    <targetColumns>
+      <description>The birthdate of Persons in the Text</description>
+      <format>dd-MM-yyyy</format>
+      <name>Birthdate</name>
+      <type>3</type>
+    </targetColumns>
+    <targetColumns>
+      <description>The profession of Persons in the Text, only one per result row</description>
+      <format/>
+      <name>Profession</name>
+      <type>2</type>
+    </targetColumns>
     <textfield>Text</textfield>
     <attributes/>
     <GUI>

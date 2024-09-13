@@ -172,7 +172,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
         BaseMessages.getString(PKG, "SemanticSearchDialog.wlLookupKeyField.Label"),
         e -> setLookupKeyField(), variables);
 
-    GuiUtils.finalizeGroup(margin, wTransformName, wLookupGroup);
+    GuiUtils.finalizeGroup(margin, wTransformName, wLookupGroup, null);
 
     // ///////////////////////////////////////////////////////////
     // / END OF Lookup GROUP
@@ -197,7 +197,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
         BaseMessages.getString(PKG, "SemanticSearchDialog.wlMainStreamField.Label"),
         e -> setMainStreamField(), variables);
 
-    GuiUtils.finalizeGroup(margin, wLookupGroup, wMainStreamGroup);
+    GuiUtils.finalizeGroup(margin, wLookupGroup, wMainStreamGroup, null);
 
     // ///////////////////////////////////////////////////////////
     // / END OF MainStream GROUP
@@ -256,7 +256,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
       new ErrorDialog(shell, "Error", "Error getting list of models", e);
     }
 
-    GuiUtils.finalizeGroup(margin, wMainStreamGroup, wSettingsGroup);
+    GuiUtils.finalizeGroup(margin, wMainStreamGroup, wSettingsGroup, null);
 
     // ///////////////////////////////////////////////////////////
     // / END OF Settings GROUP
@@ -292,7 +292,7 @@ public class SemanticSearchDialog extends BaseTransformDialog implements ITransf
     this.wDistanceField = generateTextVar(middle, margin, wKeyField, wOutputFieldsGroup,
         BaseMessages.getString(PKG, "SemanticSearchDialog.DistanceField.Label"), null);
 
-    GuiUtils.finalizeGroup(margin, wSettingsGroup, wOutputFieldsGroup);
+    GuiUtils.finalizeGroup(margin, wSettingsGroup, wOutputFieldsGroup, null);
 
     // ///////////////////////////////////////////////////////////
     // / END OF OutputFields GROUP
