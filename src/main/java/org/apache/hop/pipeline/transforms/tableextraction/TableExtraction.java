@@ -50,19 +50,11 @@ import dev.langchain4j.model.output.Response;
  */
 public class TableExtraction extends BaseTransform<TableExtractionMeta, TableExtractionData> {
   private static final Class<?> PKG = TableExtractionMeta.class; // For Translator
-  private static final String SYSTEM_MESSAGE = "You are tasked with extracting structured data from the user's input text and mapping it to the provided JSON structure.\n"
+  private static final String SYSTEM_MESSAGE = "Extract data from the user message.\n" +
+      "If one field has multiple matches, list only one match per JSON and return multiple JSONs as array, one for each match.\n"
+      + "Return only the result, no explanaitions.\n"
       +
-      "From the user's message, extract data that corresponds to the values described in the JSON structure provided between the brackets.\n"
-      +
-      "Do not add or remove any keys from the provided JSON structure.\n" +
-      "For each key in the JSON structure, if multiple values are found, create a separate JSON object for each occurrence.\n"
-      +
-      "Always return all the extracted data as a JSON array, even if only one value is found. For multiple matches, return separate JSON objects for each match, formatted as [{...}, {...}, {...}].\n"
-      +
-      "The result must be a valid JSON array parsable by this Java function: objectMapper.readValue(response.content().text(), new TypeReference<List<Map<String, String>>>() {});\n"
-      +
-      "Only return the JSON array. Do not include any extra explanations, text, or formatting.\n" +
-      "The JSON structure for extraction is: {%s}";
+      "The JSON structure for extraction is: [{%s}]";
 
   private static final String JSON_DELIMITER = ",";
   private static final String JSON_STRUCTURE = "\"%s\":\"%s as datatype %s\"";
