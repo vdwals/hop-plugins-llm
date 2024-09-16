@@ -22,7 +22,9 @@ import java.util.stream.Collectors;
 
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopTransformException;
+import org.apache.hop.core.exception.HopValueException;
 import org.apache.hop.core.row.IRowMeta;
+import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.value.ValueMetaFactory;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.i18n.BaseMessages;
@@ -50,24 +52,18 @@ public class TableExtraction extends BaseTransform<TableExtractionMeta, TableExt
   private static final Class<?> PKG = TableExtractionMeta.class; // For Translator
   private static final String SYSTEM_MESSAGE = "You are tasked with extracting structured data from the user's input text and mapping it to the provided JSON structure.\n"
       +
-      "1. From the user's message, extract data that corresponds to the values described in the JSON structure provided between the brackets.\n"
+      "From the user's message, extract data that corresponds to the values described in the JSON structure provided between the brackets.\n"
       +
-      "2. Do not add or remove any keys from the provided JSON structure.\n" +
-      "3. If there are multiple matches for a single key, return separate JSON objects for each match. Never combine multiple values for a key in one JSON object.\n"
+      "Do not add or remove any keys from the provided JSON structure.\n" +
+      "For each key in the JSON structure, if multiple values are found, create a separate JSON object for each occurrence.\n"
       +
-      "4. Always return the results as a list of JSON objects (even if there is only one extraction). For example: [{...}] for a single extraction or [{...}, {...}, {...}] for multiple extractions.\n"
+      "Always return all the extracted data as a JSON array, even if only one value is found. For multiple matches, return separate JSON objects for each match, formatted as [{...}, {...}, {...}].\n"
       +
-      "5. Ensure that the result is a valid JSON string that can be parsed by this Java function: objectMapper.readValue(response.content().text(), new TypeReference<List<Map<String, String>>>() {});\n"
+      "The result must be a valid JSON array parsable by this Java function: objectMapper.readValue(response.content().text(), new TypeReference<List<Map<String, String>>>() {});\n"
       +
-      "6. The JSON structure for extraction is: {%s}\n\n" +
-      "Examples:\n" +
-      "Input: \"Dennis Wals, born 01.01.1987, works as Philosopher and Data Engineer\", JSON: {\"Firstname\":\"Firstname as String\",\"Profession\":\"Profession as String\"}\n"
-      +
-      "Output: [{\"Firstname\":\"Dennis\",\"Profession\":\"Philosopher\"},{\"Firstname\":\"Dennis\",\"Profession\":\"Data Engineer\"}]\n\n"
-      +
-      "Input: \"Karl Wals, born 01.02.1987, works as Facility Manager\", JSON: {\"Firstname\":\"Firstname as String\",\"Profession\":\"Profession as String\"}\n"
-      +
-      "Output: [{\"Firstname\":\"Karl\",\"Profession\":\"Facility Manager\"}]";
+      "Only return the JSON array. Do not include any extra explanations, text, or formatting.\n" +
+      "The JSON structure for extraction is: {%s}";
+
   private static final String JSON_DELIMITER = ",";
   private static final String JSON_STRUCTURE = "\"%s\":\"%s as datatype %s\"";
   private static final String JSON_STRUCTURE_WITH_FORMAT = "\"%s\":\"%s as datatype %s in format %s\"";
@@ -170,7 +166,13 @@ public class TableExtraction extends BaseTransform<TableExtractionMeta, TableExt
       Object[] extracts = new Object[data.numberOfReturnFields];
       for (int insertIndex = 0; insertIndex < data.numberOfReturnFields; insertIndex++) {
         int outputRowIndex = data.indexOfReturnFields + insertIndex;
-        extracts[insertIndex] = map.get(outputRowFieldNames[outputRowIndex]);
+        String value = map.get(outputRowFieldNames[outputRowIndex]);
+        IValueMeta valueMeta = data.outputRowMeta.getValueMeta(outputRowIndex);
+        try {
+          extracts[insertIndex] = valueMeta.convertData(valueMeta, value);
+        } catch (HopValueException e) {
+          e.printStackTrace();
+        }
       }
       return extracts;
     }).collect(Collectors.toList());
