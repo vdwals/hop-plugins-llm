@@ -19,8 +19,8 @@ package org.apache.hop.pipeline.transforms.tableextraction;
 
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.pipeline.transform.BaseTransformData;
-import org.apache.hop.pipeline.transform.stream.IStream;
 
+import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 
 public class TableExtractionData extends BaseTransformData {
@@ -29,12 +29,11 @@ public class TableExtractionData extends BaseTransformData {
 
   /** index of main stream field */
   public int indexOfTextField;
-
-  public IRowMeta infoMeta;
-
-  public IStream infoStream;
+  public int indexOfReturnFields;
+  public int numberOfReturnFields;
 
   public ChatLanguageModel chatModel;
+  public ChatMessage systemMessage;
 
   public TableExtractionData() {
     super();

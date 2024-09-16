@@ -1,5 +1,6 @@
 package org.apache.hop.langchain4j.languagemodels.ollama;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.apache.hop.core.gui.plugin.GuiElementType;
@@ -61,7 +62,7 @@ public class OllamaModel implements ILanguageModel {
             IVariables variables) {
         String baseUrl = String.format(URL_TEMPLATE, protocol, host, port);
 
-        return OllamaChatModel.builder().baseUrl(baseUrl).modelName(modelName).build();
+        return OllamaChatModel.builder().baseUrl(baseUrl).modelName(modelName).timeout(Duration.ofMinutes(10)).build();
     }
 
     public List<String> getProtocols(ILogChannel log, IHopMetadataProvider metadataProvider) {
